@@ -36,6 +36,10 @@ python_version = "3.12"
 strict = true
 warn_unused_ignores = true
 disallow_any_explicit = false
+explicit_package_bases = true
+namespace_packages = true
+mypy_path = "services/api:services/worker:packages/shared"
+files = ["services/api/curb_api", "services/worker/curb_worker", "packages/shared/curb_shared"]
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]
