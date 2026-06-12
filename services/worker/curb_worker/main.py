@@ -17,6 +17,7 @@ from curb_shared.bus import JOB_QUEUE
 from curb_shared.config import load_settings
 from playwright.async_api import Browser, async_playwright
 from redis.asyncio import Redis
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 from curb_worker import repository
 from curb_worker.pipeline import run_audit
@@ -34,7 +35,13 @@ async def _consume(
     log.info("worker_ready", queue=JOB_QUEUE)
     while not stop.is_set():
         # Block up to 5s; bounded so we can react to shutdown signals.
-        msg = await redis.blpop([JOB_QUEUE], timeout=5)
+        # redis-py raises TimeoutError on socket-level timeouts when BLPOP
+        # returns nil — semantically equivalent to "no work", so treat the
+        # same as None and loop.
+        try:
+            msg = await redis.blpop([JOB_QUEUE], timeout=5)
+        except RedisTimeoutError:
+            continue
         if msg is None:
             continue
         _, raw = msg
