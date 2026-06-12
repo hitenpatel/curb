@@ -37,7 +37,10 @@ jobs:
           uv run ruff format --check .
 
       - name: Types (mypy)
-        run: uv run mypy services packages
+        run: uv run mypy
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
 
       - name: Tests (pytest)
         run: uv run pytest -q

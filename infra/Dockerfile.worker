@@ -24,5 +24,4 @@ COPY services/worker ./services/worker
 
 RUN uv sync --frozen --no-dev --package curb-worker
 
-# Phase 0: placeholder loop. The real consumer lands in Phase 1.
-CMD ["python", "-c", "import time; print('curb-worker: idle (phase 0)'); time.sleep(1e9)"]
+CMD ["python", "-m", "curb_worker.main"]
