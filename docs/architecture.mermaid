@@ -1,0 +1,64 @@
+flowchart TB
+    subgraph CLIENT["Browser — SvelteKit 2 / Svelte 5 runes"]
+        UI["Audit UI<br/>URL input · streamed results · fix diffs · scorecard"]
+        SAMPLES["Sample audits<br/>pre-computed · zero-cost default"]
+        BYOK["Bring-your-own-key<br/>live mode · key stays client-side"]
+    end
+
+    subgraph EDGE["Your box · Traefik"]
+        TR["a11y.hiten.dev · TLS"]
+    end
+
+    subgraph API["FastAPI · Python async"]
+        EP["POST /audits · GET /audits/:id · SSE stream"]
+        GW["Model gateway · Pydantic AI<br/>provider-agnostic · BYOK override"]
+    end
+
+    subgraph WORKER["Audit pipeline · worker"]
+        CRAWL["1 · Crawl + detect<br/>Playwright headless + axe-core"]
+        RETR["2 · Retrieve guidance<br/>WCAG / ARIA patterns (RAG)"]
+        AGENT["3 · Remediate agent<br/>propose → apply → re-run axe → revise"]
+        SCORE["4 · Score<br/>re-run-axe ground truth + LLM-judge"]
+    end
+
+    subgraph DATA["Data · Postgres + Redis"]
+        PG[("Postgres<br/>audits · violations · remediations · eval_results")]
+        VEC[("pgvector<br/>WCAG / ARIA corpus")]
+        RDS[("Redis<br/>job queue · SSE pub/sub")]
+    end
+
+    subgraph MODELS["Models · pluggable + free"]
+        GEN["Generation<br/>Gemini / Groq / GitHub Models / Ollama"]
+        EMB["Embeddings · local<br/>bge-small / all-MiniLM"]
+    end
+
+    subgraph CI["GitHub Actions · eval harness"]
+        GOLD["Golden dataset<br/>issue → ideal-fix pairs"]
+        EVAL["DeepEval<br/>primary: re-run-axe pass rate<br/>secondary: LLM-judge"]
+        GATE["Regression gate on PR"]
+    end
+
+    UI --> TR --> EP --> RDS --> CRAWL
+    SAMPLES -.-> TR
+    BYOK --> TR
+    CRAWL --> RETR --> AGENT --> SCORE
+    SCORE --> RDS
+    RDS -->|progress events| EP
+    EP -->|SSE| UI
+    AGENT --> GW --> GEN
+    SCORE --> GW
+    RETR --> VEC
+    EMB -.-> VEC
+    CRAWL --> PG
+    AGENT --> PG
+    SCORE --> PG
+    GOLD --> EVAL --> GATE
+    EVAL -.-> GW
+
+    classDef free fill:#E6F2F0,stroke:#0F766E,color:#0B5C56;
+    classDef pluggable fill:#FEF3C7,stroke:#B45309,color:#7C2D12;
+    classDef core fill:#EDE9FE,stroke:#6D28D9,color:#4C1D95;
+
+    class CRAWL,RETR,SCORE,EMB,VEC,PG,RDS,SAMPLES free;
+    class GEN,GW,BYOK pluggable;
+    class AGENT core;
