@@ -1,6 +1,7 @@
 # Worker extends the official Playwright Python base so Chromium is preinstalled.
-# Pin the version explicitly; bump deliberately, not silently.
-FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+# Pin the version explicitly; bump deliberately, not silently. Must match the
+# `playwright` version resolved in uv.lock (currently 1.60.0).
+FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
 
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
