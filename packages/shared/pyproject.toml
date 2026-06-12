@@ -5,6 +5,7 @@ description = "Shared Pydantic models for Curb (violations, remediation, audit l
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
 ]
 
 [build-system]

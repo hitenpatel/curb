@@ -1,17 +1,25 @@
 """Shared Pydantic models for Curb."""
 
 from curb_shared.models import (
-    AuditStatus,
+    Audit,
+    AuditEvent,
+    AuditRequest,
+    AuditState,
     Patch,
     Remediation,
     Severity,
     Violation,
+    coerce_severity,
 )
 
 __all__ = [
-    "AuditStatus",
+    "Audit",
+    "AuditEvent",
+    "AuditRequest",
+    "AuditState",
     "Patch",
     "Remediation",
     "Severity",
     "Violation",
+    "coerce_severity",
 ]
