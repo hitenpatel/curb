@@ -61,9 +61,7 @@ def test_parse_axe_flattens_nodes_to_violations() -> None:
 
 
 @pytest.mark.slow
-async def test_detector_catches_known_violations(
-    browser: Browser, known_bad_page: str
-) -> None:
+async def test_detector_catches_known_violations(browser: Browser, known_bad_page: str) -> None:
     audit_id = uuid4()
     page = await browser.new_page()
     await page.set_content(known_bad_page)
