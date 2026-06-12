@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Curb pre-push gate. The brief says commits go straight to main, so this
+# is the substitute for a PR check: green here or do not push.
+#
+# Enable once with: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "==> ruff"
+uv run ruff check .
+uv run ruff format --check .
+
+echo "==> mypy"
+uv run mypy services packages
+
+echo "==> pytest (fast)"
+uv run pytest -q -m "not slow"
+
+echo "==> svelte-check"
+pnpm --dir apps/web run check
+
+if [ -d "evals/smoke" ]; then
+    echo "==> eval smoke"
+    uv run deepeval test run evals/smoke
+else
+    echo "==> eval smoke (skipped: evals/smoke not present yet)"
+fi
+
+echo "==> ok"

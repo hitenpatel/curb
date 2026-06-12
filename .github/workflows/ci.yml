@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Python sync
+        run: uv sync --all-packages
+
+      - name: Lint (ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Types (mypy)
+        run: uv run mypy services packages
+
+      - name: Tests (pytest)
+        run: uv run pytest -q
+
+      - name: Frontend install
+        run: pnpm --dir apps/web install --frozen-lockfile
+
+      - name: Frontend check + build
+        run: |
+          pnpm --dir apps/web run check
+          pnpm --dir apps/web run build
+
+      # The eval gate lands with the harness in Phase 4. Until then the step
+      # is a placeholder so the workflow shape is fixed and visible.
+      - name: Eval gate (re-run-axe pass rate)
+        if: hashFiles('evals/golden/**') != ''
+        run: uv run deepeval test run evals/golden
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy on the box
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'cd ~/curb && git pull --ff-only && \
+             docker compose -f infra/docker-compose.yml up -d --build'
