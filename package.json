@@ -1,0 +1,11 @@
+{
+  "name": "curb",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build": "pnpm --dir apps/web build",
+    "check": "pnpm --dir apps/web check"
+  }
+}

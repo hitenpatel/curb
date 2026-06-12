@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+.uv-cache/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+.vercel/
+.netlify/
+.turbo/
+.next/
+.cache/
+.parcel-cache/
+.pnpm-store/
+
+# Build artefacts
+apps/web/build/
+apps/web/.output/
+
+# Env + secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Playwright
+playwright-report/
+test-results/
