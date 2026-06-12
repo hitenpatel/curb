@@ -1,0 +1,82 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: curb
+      POSTGRES_USER: curb
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - curb-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U curb -d curb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://curb:${DB_PASSWORD}@db:5432/curb
+      REDIS_URL: redis://redis:6379
+      MODEL_PROVIDER: ${MODEL_PROVIDER}
+      MODEL_API_KEY: ${MODEL_API_KEY}
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [internal]
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://curb:${DB_PASSWORD}@db:5432/curb
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - "traefik.http.routers.curb-api.rule=Host(`a11y.hiten.dev`) && PathPrefix(`/api`)"
+      - traefik.http.routers.curb-api.priority=100
+      - traefik.http.routers.curb-api.entrypoints=websecure
+      - traefik.http.routers.curb-api.tls.certresolver=le
+      - traefik.http.services.curb-api.loadbalancer.server.port=8000
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    environment:
+      PUBLIC_API_URL: https://a11y.hiten.dev
+    depends_on: [api]
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - "traefik.http.routers.curb-web.rule=Host(`a11y.hiten.dev`)"
+      - traefik.http.routers.curb-web.entrypoints=websecure
+      - traefik.http.routers.curb-web.tls.certresolver=le
+      - traefik.http.services.curb-web.loadbalancer.server.port=3000
+
+networks:
+  internal:
+  traefik:
+    external: true
+
+volumes:
+  curb-db:

@@ -1,0 +1,28 @@
+# Worker extends the official Playwright Python base so Chromium is preinstalled.
+# Pin the version explicitly; bump deliberately, not silently.
+FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:/root/.local/bin:$PATH" \
+    PYTHONUNBUFFERED=1
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+COPY packages/shared/pyproject.toml ./packages/shared/
+COPY services/api/pyproject.toml ./services/api/
+COPY services/worker/pyproject.toml ./services/worker/
+
+RUN uv sync --frozen --no-dev --package curb-worker --no-install-project
+
+COPY packages/shared ./packages/shared
+COPY services/worker ./services/worker
+
+RUN uv sync --frozen --no-dev --package curb-worker
+
+# Phase 0: placeholder loop. The real consumer lands in Phase 1.
+CMD ["python", "-c", "import time; print('curb-worker: idle (phase 0)'); time.sleep(1e9)"]
