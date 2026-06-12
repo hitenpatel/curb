@@ -41,6 +41,11 @@ disallow_any_explicit = false
 module = ["tests.*"]
 disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+# Untyped third-party deps. Revisit if upstream ships py.typed markers.
+module = ["asyncpg", "asyncpg.*", "sse_starlette", "sse_starlette.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["services", "packages"]
