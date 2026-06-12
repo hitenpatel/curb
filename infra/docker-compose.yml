@@ -1,6 +1,8 @@
 services:
   db:
     image: pgvector/pgvector:pg17
+    container_name: curb-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: curb
       POSTGRES_USER: curb
@@ -16,6 +18,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: curb-redis
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -27,6 +31,8 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.worker
+    container_name: curb-worker
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://curb:${DB_PASSWORD}@db:5432/curb
       REDIS_URL: redis://redis:6379
@@ -41,41 +47,47 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.api
+    container_name: curb-api
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://curb:${DB_PASSWORD}@db:5432/curb
       REDIS_URL: redis://redis:6379
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
-    networks: [internal, traefik]
+    networks: [internal, edge]
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik
+      - traefik.docker.network=edge
       - "traefik.http.routers.curb-api.rule=Host(`a11y.hiten.dev`) && PathPrefix(`/api`)"
       - traefik.http.routers.curb-api.priority=100
-      - traefik.http.routers.curb-api.entrypoints=websecure
-      - traefik.http.routers.curb-api.tls.certresolver=le
+      - traefik.http.routers.curb-api.entryPoints=websecure
+      - traefik.http.routers.curb-api.tls=true
+      - traefik.http.routers.curb-api.tls.certresolver=cloudflare
       - traefik.http.services.curb-api.loadbalancer.server.port=8000
 
   web:
     build:
       context: ..
       dockerfile: infra/Dockerfile.web
+    container_name: curb-web
+    restart: unless-stopped
     environment:
       PUBLIC_API_URL: https://a11y.hiten.dev
     depends_on: [api]
-    networks: [internal, traefik]
+    networks: [internal, edge]
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik
+      - traefik.docker.network=edge
       - "traefik.http.routers.curb-web.rule=Host(`a11y.hiten.dev`)"
-      - traefik.http.routers.curb-web.entrypoints=websecure
-      - traefik.http.routers.curb-web.tls.certresolver=le
+      - traefik.http.routers.curb-web.entryPoints=websecure
+      - traefik.http.routers.curb-web.tls=true
+      - traefik.http.routers.curb-web.tls.certresolver=cloudflare
       - traefik.http.services.curb-web.loadbalancer.server.port=3000
 
 networks:
   internal:
-  traefik:
+  edge:
     external: true
 
 volumes:
