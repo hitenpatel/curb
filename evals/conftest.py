@@ -25,48 +25,11 @@ import pytest
 from evals.runner import GoldenCase, configured_model, load_golden
 
 EVAL_ROOT = Path(__file__).parent
+SUMMARY_PATH = EVAL_ROOT / ".last-run.md"
 
 
 def _suite_dir() -> Path:
     return EVAL_ROOT / os.getenv("CURB_EVAL_SUITE", "golden")
-
-
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """If no model is configured, deselect the suite cleanly."""
-    if configured_model() is not None:
-        return
-    skip_marker = pytest.mark.skip(
-        reason="MODEL_PROVIDER + MODEL_API_KEY not set; eval gate degraded to warning."
-    )
-    for item in items:
-        if "evals/" in str(getattr(item, "fspath", "")):
-            item.add_marker(skip_marker)
-
-
-@pytest.fixture(scope="session")
-def model() -> Any:
-    """The pydantic-ai Model the agent uses for the eval run. Resolved once
-    per session so we don't rebuild the client per case."""
-    m = configured_model()
-    if m is None:
-        pytest.skip("MODEL_PROVIDER + MODEL_API_KEY not set")
-    return m
-
-
-@pytest.fixture(scope="session")
-def golden_cases() -> list[GoldenCase]:
-    cases = load_golden(_suite_dir())
-    if not cases:
-        pytest.skip(f"no golden cases in {_suite_dir()}")
-    return cases
-
-
-@pytest.fixture(scope="session")
-def pass_rate_threshold() -> float:
-    return float(os.getenv("CURB_EVAL_MIN_PASS_RATE", "1.0"))
-
-
-SUMMARY_PATH = EVAL_ROOT / ".last-run.md"
 
 
 def write_summary(rows: list[dict[str, Any]]) -> None:
@@ -92,6 +55,48 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
     )
     SUMMARY_PATH.write_text(header + body + "\n")
     print(f"\n--- eval summary ({SUMMARY_PATH}) ---\n{header}{body}")
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """If no model is configured, deselect the suite cleanly."""
+    if configured_model() is not None:
+        return
+    skip_marker = pytest.mark.skip(
+        reason="MODEL_PROVIDER + MODEL_API_KEY not set; eval gate degraded to warning."
+    )
+    for item in items:
+        if "evals/" in str(getattr(item, "fspath", "")):
+            item.add_marker(skip_marker)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Always leave a `.last-run.md` behind so CI's artefact upload step
+    has a file to upload — placeholder if no results accumulated."""
+    if not SUMMARY_PATH.exists():
+        write_summary([])
+
+
+@pytest.fixture(scope="session")
+def model() -> Any:
+    """The pydantic-ai Model the agent uses for the eval run. Resolved once
+    per session so we don't rebuild the client per case."""
+    m = configured_model()
+    if m is None:
+        pytest.skip("MODEL_PROVIDER + MODEL_API_KEY not set")
+    return m
+
+
+@pytest.fixture(scope="session")
+def golden_cases() -> list[GoldenCase]:
+    cases = load_golden(_suite_dir())
+    if not cases:
+        pytest.skip(f"no golden cases in {_suite_dir()}")
+    return cases
+
+
+@pytest.fixture(scope="session")
+def pass_rate_threshold() -> float:
+    return float(os.getenv("CURB_EVAL_MIN_PASS_RATE", "1.0"))
 
 
 @pytest.fixture(scope="session")
