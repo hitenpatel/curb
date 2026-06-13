@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from uuid import UUID
 
 from asyncpg import Connection, Pool
-from curb_shared import Audit, AuditState, Violation
+from curb_shared import Audit, AuditState, Patch, Remediation, Violation
 
 
 async def create_audit(pool: Pool, url: str) -> Audit:
@@ -43,6 +44,34 @@ async def list_violations(pool: Pool, audit_id: UUID) -> list[Violation]:
         audit_id,
     )
     return [Violation(**dict(r)) for r in rows]
+
+
+async def list_remediations(pool: Pool, audit_id: UUID) -> list[Remediation]:
+    rows = await pool.fetch(
+        """
+        SELECT violation_id, wcag_criterion, severity, explanation, patch,
+               confidence, verified, new_violations
+        FROM remediations WHERE audit_id = $1
+        ORDER BY verified DESC, severity, wcag_criterion
+        """,
+        audit_id,
+    )
+    out: list[Remediation] = []
+    for r in rows:
+        patch_dict = r["patch"] if isinstance(r["patch"], dict) else json.loads(r["patch"])
+        out.append(
+            Remediation(
+                violation_id=r["violation_id"],
+                wcag_criterion=r["wcag_criterion"],
+                severity=r["severity"],
+                explanation=r["explanation"],
+                patch=Patch(**patch_dict),
+                confidence=float(r["confidence"]),
+                verified=r["verified"],
+                new_violations=list(r["new_violations"]),
+            )
+        )
+    return out
 
 
 async def update_audit_status(

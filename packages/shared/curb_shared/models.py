@@ -88,8 +88,13 @@ class Patch(BaseModel):
 
 
 class Remediation(BaseModel):
-    """Phase 3 stub. The verified-only contract lives on this model:
-    `verified` may only be True if the validate tool confirmed it."""
+    """One proposed fix for one violation.
+
+    The verified-only contract lives on this model: `verified` may only be
+    True if the validate tool confirmed (a) the original violation is gone
+    and (b) no new violations appeared. The agent's claim is checked
+    against the validate tool's last result by the worker — defence in
+    depth so a hallucinated `verified=true` cannot ship."""
 
     violation_id: UUID
     wcag_criterion: str
@@ -99,6 +104,14 @@ class Remediation(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     verified: bool = False
     new_violations: list[str] = Field(default_factory=list)
+
+
+class ValidationResult(BaseModel):
+    """What the `validate` tool returns when the agent calls it."""
+
+    resolved: bool
+    new_violations: list[str] = Field(default_factory=list)
+    notes: str = ""
 
 
 # SSE event payloads. The frontend keys off `kind`.

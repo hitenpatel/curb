@@ -8,6 +8,7 @@ from curb_shared.models import (
     Patch,
     Remediation,
     Severity,
+    ValidationResult,
     Violation,
     coerce_severity,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "Patch",
     "Remediation",
     "Severity",
+    "ValidationResult",
     "Violation",
     "coerce_severity",
 ]

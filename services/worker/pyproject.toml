@@ -11,6 +11,7 @@ dependencies = [
     "structlog>=24.4.0",
     "fastembed>=0.4.0",
     "pgvector>=0.3.0",
+    "pydantic-ai-slim[google,groq,openai]>=0.0.30",
     "curb-shared",
 ]
 

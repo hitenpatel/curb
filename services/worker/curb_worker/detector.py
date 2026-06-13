@@ -99,3 +99,13 @@ async def audit_url(audit_id: UUID, url: str, browser: Browser) -> list[Violatio
         return await run_axe_on_page(audit_id, page)
     finally:
         await context.close()
+
+
+async def open_audit_page(url: str, browser: Browser) -> tuple[BrowserContext, Page]:
+    """Open a page and hand it (plus its context) back so the agent can keep
+    it open through the remediation loop. Caller closes the context."""
+
+    context: BrowserContext = await browser.new_context()
+    page: Page = await context.new_page()
+    await page.goto(url, wait_until="networkidle", timeout=30_000)
+    return context, page

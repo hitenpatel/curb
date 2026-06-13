@@ -6,10 +6,11 @@ isn't a thing. Queries match the API side so we end up with one schema.
 
 from __future__ import annotations
 
+import json
 from uuid import UUID
 
 import asyncpg
-from curb_shared import AuditState, Violation
+from curb_shared import AuditState, Remediation, Violation
 
 
 async def make_pool(dsn: str) -> asyncpg.Pool:
@@ -75,3 +76,30 @@ async def persist_violations(
 async def get_audit_url(pool: asyncpg.Pool, audit_id: UUID) -> str | None:
     row = await pool.fetchrow("SELECT url FROM audits WHERE id = $1", audit_id)
     return row["url"] if row else None
+
+
+async def persist_remediation(
+    pool: asyncpg.Pool,
+    *,
+    audit_id: UUID,
+    remediation: Remediation,
+    model_used: str,
+) -> None:
+    await pool.execute(
+        """
+        INSERT INTO remediations (
+            violation_id, audit_id, wcag_criterion, severity, explanation,
+            patch, confidence, verified, new_violations, model_used
+        ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10)
+        """,
+        remediation.violation_id,
+        audit_id,
+        remediation.wcag_criterion,
+        remediation.severity,
+        remediation.explanation,
+        json.dumps(remediation.patch.model_dump()),
+        remediation.confidence,
+        remediation.verified,
+        remediation.new_violations,
+        model_used,
+    )

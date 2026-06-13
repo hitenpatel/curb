@@ -10,12 +10,13 @@ import asyncio
 import signal
 from contextlib import suppress
 from typing import Any
-from uuid import UUID
 
 import structlog
-from curb_shared.bus import JOB_QUEUE
-from curb_shared.config import load_settings
+from curb_shared import AuditRequest
+from curb_shared.bus import JOB_QUEUE, deserialize_job
+from curb_shared.config import Settings, load_settings
 from playwright.async_api import Browser, async_playwright
+from pydantic import HttpUrl
 from redis.asyncio import Redis
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
@@ -48,6 +49,7 @@ async def _consume(
     pool: Any,
     redis: Redis,
     browser: Browser,
+    settings: Settings,
     stop: asyncio.Event,
 ) -> None:
     log.info("worker_ready", queue=JOB_QUEUE)
@@ -64,11 +66,26 @@ async def _consume(
             continue
         _, raw = msg
         try:
-            audit_id = UUID(raw.decode() if isinstance(raw, bytes) else raw)
-        except ValueError:
+            job = deserialize_job(raw)
+        except Exception:
             log.warning("invalid_job", raw=raw)
             continue
-        await run_audit(audit_id, pool=pool, redis=redis, browser=browser)
+        # Build a per-audit AuditRequest from the BYOK fields on the job.
+        # The URL is recovered from DB by run_audit; we don't carry it on
+        # the job payload (single source of truth = the audits row).
+        request = AuditRequest(
+            url=HttpUrl("https://placeholder.invalid/"),
+            model_provider=job.byok_provider,
+            model_api_key=job.byok_api_key,
+        )
+        await run_audit(
+            job.audit_id,
+            pool=pool,
+            redis=redis,
+            browser=browser,
+            settings=settings,
+            request=request,
+        )
 
 
 async def main() -> None:
@@ -96,7 +113,7 @@ async def main() -> None:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=["--no-sandbox"])
         try:
-            await _consume(pool=pool, redis=redis, browser=browser, stop=stop)
+            await _consume(pool=pool, redis=redis, browser=browser, settings=settings, stop=stop)
         finally:
             await browser.close()
             await redis.aclose()

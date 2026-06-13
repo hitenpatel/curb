@@ -12,14 +12,14 @@ import json
 from collections.abc import AsyncIterator
 from uuid import UUID
 
-from curb_shared import Audit, AuditRequest, Violation
-from curb_shared.bus import JOB_QUEUE, events_channel
+from curb_shared import Audit, AuditRequest, Remediation, Violation
+from curb_shared.bus import JOB_QUEUE, Job, events_channel, serialize_job
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from curb_api.db import get_pool
-from curb_api.db.queries import create_audit, get_audit, list_violations
+from curb_api.db.queries import create_audit, get_audit, list_remediations, list_violations
 from curb_api.queue import get_redis
 
 router = APIRouter(prefix="/api/audits")
@@ -28,6 +28,7 @@ router = APIRouter(prefix="/api/audits")
 class AuditDetail(BaseModel):
     audit: Audit
     violations: list[Violation]
+    remediations: list[Remediation]
 
 
 @router.post("", response_model=Audit, status_code=201)
@@ -35,7 +36,14 @@ async def enqueue_audit(req: AuditRequest) -> Audit:
     pool = get_pool()
     redis = get_redis()
     audit = await create_audit(pool, str(req.url))
-    await redis.rpush(JOB_QUEUE, str(audit.id))
+    # BYOK fields travel on the Redis job only; never persisted. The worker
+    # forgets them after the run.
+    job = Job(
+        audit_id=audit.id,
+        byok_provider=req.model_provider,
+        byok_api_key=req.model_api_key,
+    )
+    await redis.rpush(JOB_QUEUE, serialize_job(job))
     return audit
 
 
@@ -46,7 +54,8 @@ async def read_audit(audit_id: UUID) -> AuditDetail:
     if audit is None:
         raise HTTPException(status_code=404, detail="audit not found")
     violations = await list_violations(pool, audit_id)
-    return AuditDetail(audit=audit, violations=violations)
+    remediations = await list_remediations(pool, audit_id)
+    return AuditDetail(audit=audit, violations=violations, remediations=remediations)
 
 
 @router.get("/{audit_id}/events")

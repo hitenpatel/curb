@@ -58,3 +58,25 @@ CREATE INDEX IF NOT EXISTS wcag_chunks_criterion_idx ON wcag_chunks (criterion);
 -- gives us 1 - cosine similarity as distance (lower = more similar).
 CREATE INDEX IF NOT EXISTS wcag_chunks_embedding_hnsw_idx
     ON wcag_chunks USING hnsw (embedding vector_cosine_ops);
+
+-- Phase 3: remediations.
+-- The verified-only contract lives in code (worker overrides verified=true
+-- to false if the validate tool didn't confirm) but the column is the
+-- persistence side of that contract.
+CREATE TABLE IF NOT EXISTS remediations (
+    id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    violation_id    uuid NOT NULL REFERENCES violations(id) ON DELETE CASCADE,
+    audit_id        uuid NOT NULL REFERENCES audits(id) ON DELETE CASCADE,
+    wcag_criterion  text NOT NULL,
+    severity        text NOT NULL,
+    explanation     text NOT NULL,
+    patch           jsonb NOT NULL,
+    confidence      real NOT NULL,
+    verified        boolean NOT NULL DEFAULT false,
+    new_violations  text[] NOT NULL DEFAULT '{}',
+    model_used      text NOT NULL,
+    created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS remediations_audit_id_idx ON remediations (audit_id);
+CREATE INDEX IF NOT EXISTS remediations_violation_id_idx ON remediations (violation_id);
