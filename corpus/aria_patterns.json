@@ -1,0 +1,78 @@
+{
+  "source": "ARIA Authoring Practices Guide — https://www.w3.org/WAI/ARIA/apg/patterns/ — curated for patterns axe rules reference",
+  "license": "W3C Software and Document Notice and License",
+  "patterns": [
+    {
+      "pattern": "button",
+      "title": "Button Pattern",
+      "criterion_hints": ["4.1.2", "2.1.1"],
+      "what": "A button is a widget that enables users to trigger an action or event. Prefer <button> over role=\"button\" on a div.",
+      "how_to_meet": "Use the native <button> element. If you must use role=\"button\", add tabindex=\"0\", handle both click and keydown for Enter and Space, and add aria-pressed for toggle buttons. The button has an accessible name from its text content, aria-label, or aria-labelledby.",
+      "common_failures": "<div onClick> without role/tabindex/keyboard handlers; button with no accessible name; toggle button without aria-pressed.",
+      "snippet": "<button type=\"button\" aria-label=\"Close dialog\"><svg aria-hidden=\"true\">…</svg></button>"
+    },
+    {
+      "pattern": "link",
+      "title": "Link Pattern",
+      "criterion_hints": ["2.4.4", "4.1.2"],
+      "what": "Links navigate to a new resource. Buttons perform an action on the current page. Choose by the semantic intent, not the visual style.",
+      "how_to_meet": "Use <a href=\"…\"> for navigation. The link text describes the destination. For icon-only links, add aria-label. Avoid <a> without href (it's not focusable and doesn't behave like a link).",
+      "common_failures": "<a> used as a button (no href); 'click here' link text; icon link with no aria-label.",
+      "snippet": "<a href=\"/docs\" aria-label=\"Read the documentation\">Docs</a>"
+    },
+    {
+      "pattern": "dialog",
+      "title": "Dialog (Modal) Pattern",
+      "criterion_hints": ["2.1.2", "2.4.3", "4.1.2"],
+      "what": "A modal dialog interrupts the workflow to focus on a single task and traps focus until dismissed.",
+      "how_to_meet": "Use the native <dialog> element with showModal() where possible. Otherwise: role=\"dialog\", aria-modal=\"true\", aria-labelledby pointing at the heading. Move focus to the dialog on open, restore to the trigger on close. Trap Tab inside, Escape closes.",
+      "common_failures": "Focus left on the trigger after open; no focus trap; close button has no accessible name; Escape doesn't close.",
+      "snippet": "<dialog aria-labelledby=\"dlg-title\"><h2 id=\"dlg-title\">Confirm delete</h2>…</dialog>"
+    },
+    {
+      "pattern": "form-label",
+      "title": "Form Label Pattern",
+      "criterion_hints": ["1.3.1", "3.3.2", "4.1.2"],
+      "what": "Every form control has a programmatically associated label.",
+      "how_to_meet": "Wrap inputs with <label> or use <label for=\"input-id\">. For groups, use <fieldset><legend>. For composite controls (e.g. a search bar with icon button), use aria-labelledby. Placeholder is not a label.",
+      "common_failures": "Visible label not associated with the input; placeholder used instead of label; search input labelled only by an icon.",
+      "snippet": "<label for=\"email\">Email</label><input id=\"email\" type=\"email\" autocomplete=\"email\">"
+    },
+    {
+      "pattern": "image",
+      "title": "Image Pattern",
+      "criterion_hints": ["1.1.1"],
+      "what": "Images need a text alternative unless they're decorative.",
+      "how_to_meet": "Informative <img> has alt describing what the image conveys. Decorative <img> has alt=\"\" (explicit empty). Functional images (icon-buttons) describe the action. CSS background images that convey meaning need an aria-label on the parent or visually-hidden text.",
+      "common_failures": "Missing alt; alt=\"image.png\"; decorative image with alt=\"decorative\"; SVG without title or aria-label.",
+      "snippet": "<img src=\"/chart.png\" alt=\"Sales up 12% in Q2\">"
+    },
+    {
+      "pattern": "landmarks",
+      "title": "Landmark Regions",
+      "criterion_hints": ["1.3.1", "2.4.1"],
+      "what": "Landmarks identify the major regions of a page so screen reader users can jump between them.",
+      "how_to_meet": "Use <header>, <nav>, <main>, <aside>, <footer>. One <main> per page. Name multiple <nav>s via aria-label (\"Primary\", \"Footer\"). Avoid wrapping everything in <main>.",
+      "common_failures": "Two <main> regions; no <main> at all; multiple <nav>s without distinguishing labels.",
+      "snippet": "<header><nav aria-label=\"Primary\">…</nav></header><main>…</main><footer>…</footer>"
+    },
+    {
+      "pattern": "live-region",
+      "title": "Live Regions",
+      "criterion_hints": ["4.1.3"],
+      "what": "Live regions announce dynamic content updates to assistive tech without moving focus.",
+      "how_to_meet": "Use role=\"status\" (polite) for success messages and aria-live=\"assertive\" or role=\"alert\" for errors. The region must exist in the DOM before content is inserted. For frequent updates (timers, search-as-you-type), debounce so announcements don't spam.",
+      "common_failures": "Live region created at the same time as the message (announcement is missed); aria-live=\"assertive\" on a frequently-changing region.",
+      "snippet": "<output aria-live=\"polite\">Saved.</output>"
+    },
+    {
+      "pattern": "focus-management",
+      "title": "Focus Management",
+      "criterion_hints": ["2.1.1", "2.4.3", "2.4.7", "2.4.11"],
+      "what": "Focus moves predictably when content changes, and the focused element is always visible.",
+      "how_to_meet": "On route change in an SPA, move focus to the main heading or main landmark. After closing a dialog, restore focus to the element that opened it. Style :focus-visible with a clear 3:1-contrast indicator; never use outline:none without a replacement. Sticky headers should leave enough scroll-margin so they don't cover the focused element.",
+      "common_failures": "outline:none with no replacement; SPA navigation that leaves focus on the previous link; modal closed and focus jumps to <body>.",
+      "snippet": ":focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }"
+    }
+  ]
+}

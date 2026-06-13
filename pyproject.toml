@@ -47,7 +47,15 @@ disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 # Untyped third-party deps. Revisit if upstream ships py.typed markers.
-module = ["asyncpg", "asyncpg.*", "sse_starlette", "sse_starlette.*"]
+module = [
+    "asyncpg",
+    "asyncpg.*",
+    "sse_starlette",
+    "sse_starlette.*",
+    "pgvector.*",
+    "fastembed",
+    "fastembed.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

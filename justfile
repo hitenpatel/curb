@@ -16,6 +16,10 @@ test:
     uv run pytest -q
     pnpm --dir apps/web run check
 
+# Build (or rebuild) the WCAG + ARIA guidance corpus
+corpus *args:
+    uv run python -m corpus.ingest {{args}}
+
 # Full eval harness (runs in CI as the deploy gate)
 eval:
     uv run deepeval test run evals/golden

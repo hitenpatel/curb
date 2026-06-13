@@ -1,0 +1,303 @@
+{
+  "source": "WCAG 2.2 — https://www.w3.org/TR/WCAG22/ — curated for criteria axe-core emits",
+  "license": "W3C Software and Document Notice and License",
+  "criteria": [
+    {
+      "criterion": "1.1.1",
+      "title": "Non-text Content",
+      "level": "A",
+      "what": "All non-text content presented to the user has a text alternative that serves the equivalent purpose, except for decorative content, controls, and a defined set of exceptions.",
+      "how_to_meet": "Every <img>, <area>, and <input type=\"image\"> needs an accessible name. Use the alt attribute for images. Decorative images get alt=\"\" (empty, not missing). Functional images (icons used as buttons) describe the action, not the icon. SVGs need a <title> child or aria-label. CSS background images conveying meaning must have a text equivalent. <canvas> and <object> need fallback content.",
+      "common_failures": "Missing alt attribute on <img>; alt=\"image\" or filename as alt text; decorative icon-fonts without aria-hidden=\"true\"; SVG without <title>; <input type=\"image\"> without alt.",
+      "axe_rules": ["image-alt", "input-image-alt", "area-alt", "svg-img-alt", "role-img-alt", "object-alt"]
+    },
+    {
+      "criterion": "1.2.1",
+      "title": "Audio-only and Video-only (Prerecorded)",
+      "level": "A",
+      "what": "Prerecorded audio-only content has a transcript; prerecorded video-only content has a transcript or audio description.",
+      "how_to_meet": "Provide a text transcript adjacent to the media or via a clearly labelled link. For silent video showing important visual information, either describe the events in text or supply an audio track narrating them.",
+      "common_failures": "Embedded podcast without transcript; silent demo videos without described content.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "1.3.1",
+      "title": "Info and Relationships",
+      "level": "A",
+      "what": "Information, structure, and relationships conveyed through presentation can be programmatically determined or are available in text.",
+      "how_to_meet": "Use semantic HTML: headings (<h1>-<h6>) for sections, <label> for form controls, <th> + scope for table headers, <fieldset>/<legend> for grouped inputs, <ul>/<ol> for lists. ARIA can paper over gaps but native semantics first. Don't fake headings with bold text or fake lists with dashes.",
+      "common_failures": "Form input without an associated <label>; visually heading text in a <p>; tabular data in CSS-styled divs; required fields marked only with red colour.",
+      "axe_rules": ["label", "form-field-multiple-labels", "td-headers-attr", "th-has-data-cells", "definition-list", "dlitem", "list", "listitem"]
+    },
+    {
+      "criterion": "1.3.2",
+      "title": "Meaningful Sequence",
+      "level": "A",
+      "what": "When the sequence of content affects its meaning, a correct reading sequence can be programmatically determined.",
+      "how_to_meet": "DOM order should match visual order. Don't reorder with CSS in a way that breaks logical reading. Avoid positive tabindex values that fight the DOM order.",
+      "common_failures": "CSS grid/flex reorder that puts the call-to-action before its label in DOM; tabindex=\"1\" on random elements.",
+      "axe_rules": ["tabindex"]
+    },
+    {
+      "criterion": "1.3.4",
+      "title": "Orientation",
+      "level": "AA",
+      "what": "Content does not restrict its view and operation to a single display orientation, unless a specific orientation is essential.",
+      "how_to_meet": "Don't lock orientation via CSS @media (orientation) or JS unless the task genuinely requires it (e.g. a piano keyboard demo).",
+      "common_failures": "Mobile site that breaks in landscape; viewport meta with user-scalable=no combined with orientation lock.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "1.3.5",
+      "title": "Identify Input Purpose",
+      "level": "AA",
+      "what": "The purpose of each input field collecting information about the user can be programmatically determined.",
+      "how_to_meet": "Use the HTML autocomplete attribute with the appropriate token (name, email, tel, street-address, etc.) on inputs collecting personal information. This helps password managers and assistive tech autofill consistently.",
+      "common_failures": "Login form without autocomplete=\"username\" / \"current-password\"; address form without autocomplete on street-address etc.",
+      "axe_rules": ["autocomplete-valid"]
+    },
+    {
+      "criterion": "1.4.1",
+      "title": "Use of Color",
+      "level": "A",
+      "what": "Colour is not used as the only visual means of conveying information, indicating an action, prompting a response, or distinguishing a visual element.",
+      "how_to_meet": "Pair colour with shape, text, or pattern. Required fields get a text indicator (\"required\") not just a red asterisk colour. Validation errors include an icon and message, not just red borders. Links inside body text need a non-colour cue (underline, weight, or icon).",
+      "common_failures": "Pie chart legend keyed by colour only; \"items in red are sold out\" with no other cue; links distinguished from body text only by colour.",
+      "axe_rules": ["link-in-text-block"]
+    },
+    {
+      "criterion": "1.4.3",
+      "title": "Contrast (Minimum)",
+      "level": "AA",
+      "what": "The visual presentation of text and images of text has a contrast ratio of at least 4.5:1, except for large text (3:1), incidental text, and logotypes.",
+      "how_to_meet": "Use a contrast checker on every text/background pair. Body text targets 4.5:1 against its background. Large text (18pt or 14pt bold) targets 3:1. Light grey on white is the common offender; bump body text to at least #595959 on white.",
+      "common_failures": "Placeholder text in form inputs that's too light; muted helper text on white; brand colours on coloured backgrounds without a contrast check.",
+      "axe_rules": ["color-contrast", "color-contrast-enhanced"]
+    },
+    {
+      "criterion": "1.4.4",
+      "title": "Resize Text",
+      "level": "AA",
+      "what": "Except for captions and images of text, text can be resized without assistive technology up to 200 percent without loss of content or functionality.",
+      "how_to_meet": "Use relative units (rem, em, %, vw) for text. Avoid fixed px containers that clip when text grows. Test by zooming to 200% in the browser.",
+      "common_failures": "Fixed-height nav bar that clips at 200% zoom; text in fixed-width tooltips truncated when scaled.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "1.4.10",
+      "title": "Reflow",
+      "level": "AA",
+      "what": "Content can be presented without loss of information or functionality, and without requiring scrolling in two dimensions, at a viewport of 320 CSS pixels wide.",
+      "how_to_meet": "Build responsive layouts. At 320px viewport width, content shouldn't overflow horizontally. Tables and code blocks are the usual exceptions and may scroll.",
+      "common_failures": "Fixed-width 1200px container; multi-column layout that doesn't collapse; modal that overflows on mobile.",
+      "axe_rules": ["meta-viewport", "meta-viewport-large"]
+    },
+    {
+      "criterion": "1.4.11",
+      "title": "Non-text Contrast",
+      "level": "AA",
+      "what": "The visual presentation of UI components and graphical objects has a contrast ratio of at least 3:1 against adjacent colours.",
+      "how_to_meet": "Button borders, form input borders, focus indicators, and icons that convey state need 3:1 contrast with the surrounding background. Don't rely on a 1px light-grey input border on white.",
+      "common_failures": "Form inputs with #ddd border on white; outline-only buttons in light brand colour on white; focus rings in pale blue.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "1.4.12",
+      "title": "Text Spacing",
+      "level": "AA",
+      "what": "No loss of content or functionality occurs when users override text spacing properties.",
+      "how_to_meet": "Allow line-height up to 1.5x font size, paragraph spacing 2x, letter-spacing 0.12em, word-spacing 0.16em — without text being clipped or overlapping. Avoid fixed heights on text containers.",
+      "common_failures": "Buttons with fixed height that clip taller text; cards with overflow:hidden that hide expanded line-heights.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "2.1.1",
+      "title": "Keyboard",
+      "level": "A",
+      "what": "All functionality of the content is operable through a keyboard interface without requiring specific timings for individual keystrokes.",
+      "how_to_meet": "Every interactive element must work via Tab/Enter/Space/arrows. Use native <button>, <a>, <input>. If you build a custom widget, add role + keyboard handlers (Enter and Space for buttons, arrow keys for menus/tabs/grids). Mouse-only interactions (drag without keyboard alternative, hover-only menus) violate this.",
+      "common_failures": "<div onClick> without role+tabindex+keypress handler; hover-only dropdown menu; drag-to-reorder without keyboard equivalent.",
+      "axe_rules": ["focusable-content"]
+    },
+    {
+      "criterion": "2.1.2",
+      "title": "No Keyboard Trap",
+      "level": "A",
+      "what": "If keyboard focus can be moved to a component, it can be moved away from that component using only the keyboard.",
+      "how_to_meet": "Modal dialogs trap focus inside but Escape closes them. Embedded video players must allow Tab to escape. Don't suppress Tab globally.",
+      "common_failures": "Modal that catches Tab forever; embedded iframe player that consumes all keys.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "2.4.1",
+      "title": "Bypass Blocks",
+      "level": "A",
+      "what": "A mechanism is available to bypass blocks of content that are repeated on multiple pages.",
+      "how_to_meet": "Provide a 'Skip to main content' link as the first focusable element. Use landmarks (<header>, <nav>, <main>, <footer>) so screen reader users can jump between regions.",
+      "common_failures": "No skip link; same nav repeated on every page with no way past; only landmark is <main>, no <nav> or <header>.",
+      "axe_rules": ["skip-link", "bypass", "landmark-one-main"]
+    },
+    {
+      "criterion": "2.4.2",
+      "title": "Page Titled",
+      "level": "A",
+      "what": "Web pages have titles that describe the topic or purpose.",
+      "how_to_meet": "Every page has a <title> describing its content. SPAs update document.title on route change.",
+      "common_failures": "<title> missing; same title on every page of an SPA; title says only \"App\" or the brand name.",
+      "axe_rules": ["document-title"]
+    },
+    {
+      "criterion": "2.4.3",
+      "title": "Focus Order",
+      "level": "A",
+      "what": "If a Web page can be navigated sequentially and the sequences affect meaning, focusable components receive focus in an order that preserves meaning.",
+      "how_to_meet": "Avoid positive tabindex. Visual order should match DOM order. When inserting modals or off-screen panels, manage focus explicitly so Tab order doesn't leap to the end of the DOM.",
+      "common_failures": "tabindex=\"1\", \"2\" sprinkled around; floated sidebar that comes first in DOM but appears last visually; opened modal where focus is still on the trigger underneath.",
+      "axe_rules": ["tabindex"]
+    },
+    {
+      "criterion": "2.4.4",
+      "title": "Link Purpose (In Context)",
+      "level": "A",
+      "what": "The purpose of each link can be determined from the link text alone or from the link text together with its programmatically determined context.",
+      "how_to_meet": "Link text describes the destination: 'Read the docs' not 'click here'. For icon-only links, use aria-label. Adjacent text counts as context, but identical link text pointing at different URLs is a fail.",
+      "common_failures": "<a> with no text content (icon-only without aria-label); 'Click here' / 'Read more' as link text; identical 'Read more' on multiple cards.",
+      "axe_rules": ["link-name"]
+    },
+    {
+      "criterion": "2.4.6",
+      "title": "Headings and Labels",
+      "level": "AA",
+      "what": "Headings and labels describe topic or purpose.",
+      "how_to_meet": "Heading text describes the section that follows. Form labels describe what the input collects. Don't reuse the same heading text for different sections.",
+      "common_failures": "Multiple 'Details' headings on one page; labels that say only 'Field 1', 'Field 2'.",
+      "axe_rules": ["empty-heading"]
+    },
+    {
+      "criterion": "2.4.7",
+      "title": "Focus Visible",
+      "level": "AA",
+      "what": "Any keyboard operable user interface has a mode of operation where the keyboard focus indicator is visible.",
+      "how_to_meet": "Don't remove the focus outline without replacing it. Use :focus-visible to style focus only for keyboard users. The replacement must have 3:1 contrast with surroundings.",
+      "common_failures": "Global * { outline: none } in CSS; focus ring removed on buttons because designers think it's ugly.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "2.4.11",
+      "title": "Focus Not Obscured (Minimum)",
+      "level": "AA",
+      "what": "When a user interface component receives keyboard focus, the component is not entirely hidden due to author-created content.",
+      "how_to_meet": "Sticky headers/footers must not entirely cover the focused element. When focus moves into an element below a sticky header, scroll-margin or scroll-padding should reveal it.",
+      "common_failures": "Sticky header that hides the focused form input; cookie banner covering the bottom focused button.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "2.5.3",
+      "title": "Label in Name",
+      "level": "A",
+      "what": "For user interface components with labels that include text or images of text, the accessible name contains the text that is presented visually.",
+      "how_to_meet": "If a button visually reads 'Save', the accessible name (aria-label, alt, or text content) must include 'Save'. Don't aria-label a 'Save' button as 'Submit form'.",
+      "common_failures": "aria-label that overrides visible text with synonyms; icon button with aria-label that doesn't match the visible tooltip.",
+      "axe_rules": ["label-content-name-mismatch"]
+    },
+    {
+      "criterion": "2.5.5",
+      "title": "Target Size (Enhanced)",
+      "level": "AAA",
+      "what": "The size of the target for pointer inputs is at least 44 by 44 CSS pixels.",
+      "how_to_meet": "Buttons, links, and form controls have a 44x44px hit area on touch devices. Inline links can be smaller if there's an alternative path.",
+      "common_failures": "Tiny close-X icons on toasts; navigation links 20px tall on mobile.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "2.5.8",
+      "title": "Target Size (Minimum)",
+      "level": "AA",
+      "what": "The size of the target for pointer inputs is at least 24 by 24 CSS pixels, except where exceptions apply.",
+      "how_to_meet": "Interactive controls have a 24x24px minimum target, or there's sufficient spacing between adjacent targets, or the target is inline in a sentence.",
+      "common_failures": "Adjacent 16px icon buttons in a toolbar; tiny tap-to-dismiss areas.",
+      "axe_rules": ["target-size"]
+    },
+    {
+      "criterion": "3.1.1",
+      "title": "Language of Page",
+      "level": "A",
+      "what": "The default human language of each Web page can be programmatically determined.",
+      "how_to_meet": "Set lang on the root <html> element: <html lang=\"en-GB\">. Screen readers use this to pick the right voice and pronunciation.",
+      "common_failures": "<html> without lang; lang=\"en\" on a page that's actually French; SPA where the lang attribute never updates.",
+      "axe_rules": ["html-has-lang", "html-lang-valid", "html-xml-lang-mismatch"]
+    },
+    {
+      "criterion": "3.1.2",
+      "title": "Language of Parts",
+      "level": "AA",
+      "what": "The human language of each passage or phrase in the content can be programmatically determined.",
+      "how_to_meet": "When a span of text switches language, wrap it in <span lang=\"fr\">…</span>. Required for quoted text and inline foreign phrases.",
+      "common_failures": "Translated quote without lang on the surrounding element.",
+      "axe_rules": ["valid-lang"]
+    },
+    {
+      "criterion": "3.2.2",
+      "title": "On Input",
+      "level": "A",
+      "what": "Changing the setting of a UI component does not automatically cause a change of context unless the user has been advised of the behaviour before using the component.",
+      "how_to_meet": "Selecting from a <select> shouldn't auto-submit the form or navigate. Use a submit button. If auto-submit is needed, warn the user.",
+      "common_failures": "Country dropdown that submits on change; sort dropdown that navigates immediately.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "3.3.1",
+      "title": "Error Identification",
+      "level": "A",
+      "what": "If an input error is automatically detected, the item that is in error is identified and the error is described to the user in text.",
+      "how_to_meet": "Tie error messages to the input via aria-describedby. Use aria-invalid=\"true\" on the offending field. Don't communicate errors only with red borders.",
+      "common_failures": "Toast notification only; red border with no text message; error message far from the input.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "3.3.2",
+      "title": "Labels or Instructions",
+      "level": "A",
+      "what": "Labels or instructions are provided when content requires user input.",
+      "how_to_meet": "Every input has a <label> or aria-label/aria-labelledby. Placeholder text is not a label. If a field has format requirements (e.g. date format), say so.",
+      "common_failures": "<input> with only a placeholder; search field with magnifying-glass icon and no label; password field without strength requirements stated.",
+      "axe_rules": ["label", "form-field-multiple-labels"]
+    },
+    {
+      "criterion": "3.3.8",
+      "title": "Accessible Authentication (Minimum)",
+      "level": "AA",
+      "what": "A cognitive function test (such as remembering a password or solving a puzzle) is not required for any step in an authentication process, unless that step provides an alternative or assistance.",
+      "how_to_meet": "Allow paste into password fields (don't block paste). Support password managers (autocomplete=\"current-password\"). Offer passkeys or magic-link as an alternative to CAPTCHAs and security questions.",
+      "common_failures": "Disabling paste in password fields; CAPTCHA without an audio or cognitive alternative.",
+      "axe_rules": []
+    },
+    {
+      "criterion": "4.1.1",
+      "title": "Parsing (obsolete in WCAG 2.2)",
+      "level": "A",
+      "what": "Obsolete: WCAG 2.2 removed this SC because HTML parsers recover from the kinds of errors it targeted. Kept here for reference; axe-core has dropped its parsing rules.",
+      "how_to_meet": "Still write valid HTML — duplicate IDs and unclosed tags cause real issues even if the SC is obsolete.",
+      "common_failures": "Duplicate id values; mismatched ARIA references.",
+      "axe_rules": ["duplicate-id-aria"]
+    },
+    {
+      "criterion": "4.1.2",
+      "title": "Name, Role, Value",
+      "level": "A",
+      "what": "For all UI components, the name and role can be programmatically determined; states, properties, and values that can be set by the user can be programmatically set; and notification of changes is available.",
+      "how_to_meet": "Custom controls expose role, name, and value. Native HTML gets this for free; use it. If you build a custom toggle, use role=\"switch\" + aria-checked. <button> without text needs aria-label. <iframe> needs a title.",
+      "common_failures": "<button></button> with no accessible name; <select> with no <option> labels; <iframe> without title; <input type=\"image\"> without alt.",
+      "axe_rules": ["button-name", "select-name", "frame-title", "input-button-name", "aria-input-field-name", "aria-toggle-field-name", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-valid-attr", "aria-allowed-role", "aria-roles"]
+    },
+    {
+      "criterion": "4.1.3",
+      "title": "Status Messages",
+      "level": "AA",
+      "what": "Status messages can be programmatically determined through role or properties such that they can be presented to the user by assistive technologies without receiving focus.",
+      "how_to_meet": "Use aria-live=\"polite\" for non-urgent updates (saved, error appeared) and aria-live=\"assertive\" for urgent (validation blocking submit). Or use role=\"status\" / role=\"alert\". The live region must exist in the DOM before content is inserted, otherwise it won't announce.",
+      "common_failures": "Toast appears with no aria-live; cart counter updates silently; validation summary appears but isn't announced.",
+      "axe_rules": []
+    }
+  ]
+}

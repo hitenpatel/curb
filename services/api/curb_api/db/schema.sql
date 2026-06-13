@@ -39,3 +39,22 @@ CREATE TABLE IF NOT EXISTS violations (
 
 CREATE INDEX IF NOT EXISTS violations_audit_id_idx ON violations (audit_id);
 CREATE INDEX IF NOT EXISTS violations_rule_id_idx ON violations (rule_id);
+
+-- Phase 2: WCAG 2.2 + ARIA APG guidance corpus.
+-- Embedding dim 384 matches BAAI/bge-small-en-v1.5 + all-MiniLM-L6-v2.
+CREATE TABLE IF NOT EXISTS wcag_chunks (
+    id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    source        text NOT NULL,
+    criterion     text NOT NULL,
+    title         text NOT NULL,
+    body          text NOT NULL,
+    embedding     vector(384) NOT NULL,
+    created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS wcag_chunks_criterion_idx ON wcag_chunks (criterion);
+
+-- HNSW index over the embedding column. The pgvector cosine ops class
+-- gives us 1 - cosine similarity as distance (lower = more similar).
+CREATE INDEX IF NOT EXISTS wcag_chunks_embedding_hnsw_idx
+    ON wcag_chunks USING hnsw (embedding vector_cosine_ops);
