@@ -25,6 +25,24 @@ from curb_worker.pipeline import run_audit
 log = structlog.get_logger()
 
 
+async def _maybe_ingest_corpus() -> None:
+    """Run corpus ingest on startup if the table is empty.
+
+    Imported lazily so the worker still boots if the corpus package isn't
+    on sys.path (containers set PYTHONPATH=/app; local dev gets it via uv)."""
+    try:
+        from corpus.ingest import ingest  # noqa: PLC0415
+    except ImportError:
+        log.info("corpus_ingest_skipped", reason="corpus_module_not_importable")
+        return
+    try:
+        count = await ingest()
+        log.info("corpus_ready", chunks=count)
+    except Exception:
+        # Don't crash the worker on ingest failure — fail open, log loudly.
+        log.exception("corpus_ingest_failed")
+
+
 async def _consume(
     *,
     pool: Any,
@@ -66,6 +84,10 @@ async def main() -> None:
     pool = await repository.make_pool(settings.database_url)
     redis = Redis.from_url(settings.redis_url)
     stop = asyncio.Event()
+
+    # Ingest the WCAG corpus if the table is empty. Idempotent; safe to run
+    # on every restart. Costs a model download + ~50 embeddings on first boot.
+    await _maybe_ingest_corpus()
 
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):

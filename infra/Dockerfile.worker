@@ -22,7 +22,10 @@ RUN uv sync --frozen --no-dev --package curb-worker --no-install-project
 
 COPY packages/shared ./packages/shared
 COPY services/worker ./services/worker
+COPY corpus ./corpus
 
 RUN uv sync --frozen --no-dev --package curb-worker
+
+ENV PYTHONPATH=/app
 
 CMD ["python", "-m", "curb_worker.main"]

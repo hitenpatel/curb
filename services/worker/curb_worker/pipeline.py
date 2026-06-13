@@ -19,6 +19,7 @@ from redis.asyncio import Redis
 
 from curb_worker import repository
 from curb_worker.detector import audit_url
+from curb_worker.retrieval import retrieve_for_violation
 
 log = structlog.get_logger()
 
@@ -57,6 +58,25 @@ async def run_audit(
         violations = await audit_url(audit_id, url, browser)
         await repository.persist_violations(pool, audit_id, violations)
         for v in violations:
+            # Retrieval feeds the agent in Phase 3; surfacing it on the
+            # event stream now means the UI can already show grounded
+            # WCAG context per violation. Best-effort: a retrieval miss
+            # must not fail the audit.
+            try:
+                guidance = await retrieve_for_violation(
+                    pool,
+                    rule_id=v.rule_id,
+                    wcag_criterion=v.wcag_criterion,
+                    description=v.description,
+                    help_text=v.help,
+                    k=3,
+                )
+                guidance_payload = [
+                    {"criterion": g.criterion, "title": g.title, "score": g.score} for g in guidance
+                ]
+            except Exception:
+                log.exception("retrieval_failed", audit_id=str(audit_id))
+                guidance_payload = []
             await _publish(
                 redis,
                 _event(
@@ -66,6 +86,7 @@ async def run_audit(
                     wcag_criterion=v.wcag_criterion,
                     severity=v.severity,
                     selector=v.selector,
+                    guidance=guidance_payload,
                 ),
             )
         await repository.set_status(pool, audit_id, "complete")

@@ -12,6 +12,21 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: curb
+          POSTGRES_PASSWORD: curb
+          POSTGRES_DB: curb
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U curb -d curb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CURB_TEST_DATABASE_URL: postgresql://curb:curb@localhost:5432/curb
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +56,14 @@ jobs:
 
       - name: Install Playwright Chromium
         run: uv run playwright install --with-deps chromium
+
+      - name: Apply schema + ingest corpus into test DB
+        env:
+          DATABASE_URL: ${{ env.CURB_TEST_DATABASE_URL }}
+        run: |
+          # Apply schema via psql so retrieval tests have wcag_chunks ready.
+          PGPASSWORD=curb psql -h localhost -U curb -d curb -f services/api/curb_api/db/schema.sql
+          uv run python -m corpus.ingest
 
       - name: Tests (pytest)
         run: uv run pytest -q
