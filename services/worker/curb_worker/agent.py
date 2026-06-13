@@ -164,8 +164,17 @@ async def propose_and_verify(
     deps = AgentDeps(page=page, violation=violation, baseline_rule_ids=baseline)
     try:
         result = await agent.run(_build_prompt(violation, guidance), deps=deps)
-    except Exception:
-        log.exception("agent_run_failed", violation_id=str(violation.id))
+    except Exception as exc:
+        # Short error only — `log.exception` was dumping multi-KB tracebacks
+        # for every Gemini 429 and tripping BlockingIOError on stdout. The
+        # type + truncated message is enough to triage; full traceback is
+        # captured by the harness when it cares.
+        log.warning(
+            "agent_run_failed",
+            violation_id=str(violation.id),
+            error_type=type(exc).__name__,
+            error=str(exc)[:200],
+        )
         return None
 
     remediation = result.output

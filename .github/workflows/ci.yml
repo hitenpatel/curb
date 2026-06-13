@@ -76,11 +76,24 @@ jobs:
           pnpm --dir apps/web run check
           pnpm --dir apps/web run build
 
-      # The eval gate lands with the harness in Phase 4. Until then the step
-      # is a placeholder so the workflow shape is fixed and visible.
+      # Primary metric: re-run-axe pass rate over the golden dataset.
+      # Skipped cleanly when MODEL_API_KEY isn't set (free-tier keys can
+      # also rate-limit; transient errors are inconclusive, not fail).
       - name: Eval gate (re-run-axe pass rate)
         if: hashFiles('evals/golden/**') != ''
-        run: uv run deepeval test run evals/golden
+        env:
+          MODEL_PROVIDER: google-gla
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          CURB_EVAL_SUITE: golden
+          CURB_TEST_DATABASE_URL: ${{ env.CURB_TEST_DATABASE_URL }}
+        run: uv run pytest evals -q
+
+      - name: Upload eval summary
+        if: always() && hashFiles('evals/.last-run.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-summary
+          path: evals/.last-run.md
 
   deploy:
     needs: verify

@@ -25,10 +25,46 @@ from curb_api.queue import get_redis
 router = APIRouter(prefix="/api/audits")
 
 
+class Scorecard(BaseModel):
+    """Per-audit summary metrics. Primary metric is `pass_rate` — the
+    fraction of attempted remediations the agent + axe self-check both
+    confirmed. Mirrors the eval-harness ground truth, computed per audit."""
+
+    violations_total: int
+    violations_by_severity: dict[str, int]
+    violations_by_criterion: dict[str, int]
+    remediations_attempted: int
+    remediations_verified: int
+    pass_rate: float
+    regressions_avoided: int  # remediations rejected because they introduced new violations
+
+
+def _scorecard(violations: list[Violation], remediations: list[Remediation]) -> Scorecard:
+    by_severity: dict[str, int] = {}
+    by_criterion: dict[str, int] = {}
+    for v in violations:
+        by_severity[v.severity] = by_severity.get(v.severity, 0) + 1
+        by_criterion[v.wcag_criterion] = by_criterion.get(v.wcag_criterion, 0) + 1
+    attempted = len(remediations)
+    verified = sum(1 for r in remediations if r.verified)
+    regressions = sum(1 for r in remediations if r.new_violations)
+    rate = (verified / attempted) if attempted else 0.0
+    return Scorecard(
+        violations_total=len(violations),
+        violations_by_severity=by_severity,
+        violations_by_criterion=by_criterion,
+        remediations_attempted=attempted,
+        remediations_verified=verified,
+        pass_rate=rate,
+        regressions_avoided=regressions,
+    )
+
+
 class AuditDetail(BaseModel):
     audit: Audit
     violations: list[Violation]
     remediations: list[Remediation]
+    scorecard: Scorecard
 
 
 @router.post("", response_model=Audit, status_code=201)
@@ -55,7 +91,12 @@ async def read_audit(audit_id: UUID) -> AuditDetail:
         raise HTTPException(status_code=404, detail="audit not found")
     violations = await list_violations(pool, audit_id)
     remediations = await list_remediations(pool, audit_id)
-    return AuditDetail(audit=audit, violations=violations, remediations=remediations)
+    return AuditDetail(
+        audit=audit,
+        violations=violations,
+        remediations=remediations,
+        scorecard=_scorecard(violations, remediations),
+    )
 
 
 @router.get("/{audit_id}/events")

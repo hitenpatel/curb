@@ -24,7 +24,7 @@ pnpm --dir apps/web run check
 
 if [ -d "evals/smoke" ]; then
     echo "==> eval smoke"
-    uv run deepeval test run evals/smoke
+    CURB_EVAL_SUITE=smoke uv run pytest evals -q
 else
     echo "==> eval smoke (skipped: evals/smoke not present yet)"
 fi

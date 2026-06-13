@@ -1,0 +1,8 @@
+{
+  "id": "01-image-alt",
+  "title": "Informative image missing alt",
+  "wcag_criterion": "1.1.1",
+  "expected_rule_id": "image-alt",
+  "fixture_html": "<!DOCTYPE html><html lang=\"en\"><head><title>Image alt</title></head><body><main><h1>Mars rover progress</h1><p>The rover landed last week.</p><img src=\"/rover.jpg\" width=\"800\" height=\"450\"></main></body></html>",
+  "notes": "Informative image needs descriptive alt; tests the agent picks something non-empty and meaningful."
+}

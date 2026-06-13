@@ -1,0 +1,8 @@
+{
+  "id": "03-link-name",
+  "title": "Link with no accessible text",
+  "wcag_criterion": "2.4.4",
+  "expected_rule_id": "link-name",
+  "fixture_html": "<!DOCTYPE html><html lang=\"en\"><head><title>Link name</title></head><body><main><h1>Follow us</h1><a href=\"https://twitter.com/example\"><img src=\"/twitter.svg\" width=\"24\" height=\"24\" alt=\"\"></a></main></body></html>",
+  "notes": "Icon-only link needs accessible text (aria-label or inner text)."
+}

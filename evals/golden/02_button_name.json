@@ -1,0 +1,8 @@
+{
+  "id": "02-button-name",
+  "title": "Icon button with no accessible name",
+  "wcag_criterion": "4.1.2",
+  "expected_rule_id": "button-name",
+  "fixture_html": "<!DOCTYPE html><html lang=\"en\"><head><title>Button name</title></head><body><main><h1>Close this dialog</h1><button class=\"close\" type=\"button\"><svg aria-hidden=\"true\" width=\"16\" height=\"16\"><path d=\"M0 0 L16 16 M16 0 L0 16\" stroke=\"black\"/></svg></button></main></body></html>",
+  "notes": "SVG-icon button needs aria-label so screen readers can announce its action."
+}

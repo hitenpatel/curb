@@ -1,0 +1,8 @@
+{
+  "id": "06-frame-title",
+  "title": "Iframe without title",
+  "wcag_criterion": "4.1.2",
+  "expected_rule_id": "frame-title",
+  "fixture_html": "<!DOCTYPE html><html lang=\"en\"><head><title>Frame title</title></head><body><main><h1>Embedded content</h1><iframe src=\"about:blank\" width=\"400\" height=\"200\"></iframe></main></body></html>",
+  "notes": "Iframes need title attributes so AT users know what's embedded."
+}

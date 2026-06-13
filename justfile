@@ -20,13 +20,14 @@ test:
 corpus *args:
     uv run python -m corpus.ingest {{args}}
 
-# Full eval harness (runs in CI as the deploy gate)
+# Full eval harness — runs every golden case via the live agent.
+# Needs MODEL_PROVIDER + MODEL_API_KEY in the environment; otherwise skips.
 eval:
-    uv run deepeval test run evals/golden
+    CURB_EVAL_SUITE=golden uv run pytest evals -q
 
-# Fast eval subset, used by the pre-push hook
+# Fast eval subset (one case), used by the pre-push hook.
 eval-smoke:
-    uv run deepeval test run evals/smoke
+    CURB_EVAL_SUITE=smoke uv run pytest evals -q
 
 # Lint + format check
 lint:

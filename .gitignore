@@ -51,3 +51,6 @@ logs/
 # Playwright
 playwright-report/
 test-results/
+
+# Eval run summaries (CI uploads these as artefacts; don't track)
+evals/.last-run.md
