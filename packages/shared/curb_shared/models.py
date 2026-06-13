@@ -119,6 +119,6 @@ class ValidationResult(BaseModel):
 
 class AuditEvent(BaseModel):
     audit_id: UUID
-    kind: Literal["status", "violation", "complete", "error"]
+    kind: Literal["status", "violation", "remediation", "complete", "error"]
     payload: dict[str, object] = Field(default_factory=dict)
     at: datetime
