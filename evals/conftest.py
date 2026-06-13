@@ -25,7 +25,7 @@ import pytest
 from evals.runner import GoldenCase, configured_model, load_golden
 
 EVAL_ROOT = Path(__file__).parent
-SUMMARY_PATH = EVAL_ROOT / ".last-run.md"
+SUMMARY_PATH = EVAL_ROOT / "last-run.md"
 
 
 def _suite_dir() -> Path:

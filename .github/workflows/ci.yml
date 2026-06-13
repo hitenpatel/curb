@@ -86,19 +86,14 @@ jobs:
           MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
           CURB_EVAL_SUITE: golden
           CURB_TEST_DATABASE_URL: ${{ env.CURB_TEST_DATABASE_URL }}
-        run: |
-          # Pre-seed the summary so the upload step always has something
-          # (pytest may run skipped in seconds and not flush its writes).
-          mkdir -p evals
-          printf '| case | detected | verified | conf | note |\n| --- | --- | --- | --- | --- |\n| (pretest placeholder) | - | - | - | overwritten by pytest run |\n' > evals/.last-run.md
-          uv run pytest evals -q -s
+        run: uv run pytest evals -q
 
       - name: Upload eval summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: eval-summary
-          path: evals/.last-run.md
+          path: evals/last-run.md
           if-no-files-found: warn
 
   deploy:

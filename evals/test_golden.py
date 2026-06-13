@@ -40,10 +40,6 @@ async def test_each_golden_case_verifies(
     """Run every golden case; assert the conclusive pass rate clears the
     threshold. We DON'T fail on the first miss because the per-case detail
     is useful for diagnosis — collect, then assert at the end."""
-    print(f"\n[eval] starting suite, {len(golden_cases)} cases", flush=True)
-    # Always leave at least an empty summary on disk so the artefact upload
-    # has something to grab even if the loop never appends.
-    write_summary([])
     for i, case in enumerate(golden_cases):
         if i > 0:
             await asyncio.sleep(INTER_CASE_DELAY_S)
