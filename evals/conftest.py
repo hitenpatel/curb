@@ -38,13 +38,15 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
     Called both inside the test body (so a partial run still produces a
     report even if pytest skips at the end) and from the fixture teardown
     (for runs that don't reach the call site). Idempotent overwrite."""
+    path = SUMMARY_PATH.resolve()
     if not rows:
         # Empty placeholder so the artifact upload step doesn't warn.
-        SUMMARY_PATH.write_text(
+        path.write_text(
             "| case | detected | verified | conf | note |\n"
             "| --- | --- | --- | --- | --- |\n"
             "| (no cases ran) | - | - | - | model fixture skipped |\n"
         )
+        print(f"\n[eval] wrote placeholder summary to {path}", flush=True)
         return
     header = "| case | detected | verified | conf | note |\n| --- | --- | --- | --- | --- |\n"
     body = "\n".join(
@@ -53,8 +55,8 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
         f"{(r.get('error') or '')[:80]} |"
         for r in rows
     )
-    SUMMARY_PATH.write_text(header + body + "\n")
-    print(f"\n--- eval summary ({SUMMARY_PATH}) ---\n{header}{body}")
+    path.write_text(header + body + "\n")
+    print(f"\n[eval] wrote {len(rows)}-row summary to {path}", flush=True)
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
