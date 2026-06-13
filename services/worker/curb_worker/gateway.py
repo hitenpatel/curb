@@ -18,8 +18,10 @@ from curb_shared.config import Settings
 from pydantic_ai.models import Model
 
 # Sensible free-tier defaults per provider, keyed by the bare provider string.
+# gemini-2.5-flash is the current free-tier-friendly choice on Google AI Studio;
+# gemini-2.0-flash had its free-tier quota cut to zero on many projects.
 _DEFAULT_MODEL_FOR: dict[str, str] = {
-    "google-gla": "gemini-2.0-flash",
+    "google-gla": "gemini-2.5-flash",
     "groq": "llama-3.3-70b-versatile",
     "openai": "gpt-4o-mini",
 }
