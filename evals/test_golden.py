@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 
+from evals.conftest import write_summary
 from evals.runner import GoldenCase, run_one
 
 # Pace the eval to respect the free-tier rate limit (Gemini 2.5 Flash:
@@ -52,6 +53,8 @@ async def test_each_golden_case_verifies(
                 "error": result.error,
             }
         )
+        # Flush after every case so the CI artefact survives a mid-run skip.
+        write_summary(results_log)
 
     conclusive = [r for r in results_log if not r.get("error")]
     if not conclusive:

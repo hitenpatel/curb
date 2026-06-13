@@ -66,13 +66,22 @@ def pass_rate_threshold() -> float:
     return float(os.getenv("CURB_EVAL_MIN_PASS_RATE", "1.0"))
 
 
-@pytest.fixture(scope="session")
-def results_log() -> Iterator[list[dict[str, Any]]]:
-    """Accumulator for per-case results; emitted as a Markdown table at the
-    end of the session via the autouse summary fixture."""
-    rows: list[dict[str, Any]] = []
-    yield rows
+SUMMARY_PATH = EVAL_ROOT / ".last-run.md"
+
+
+def write_summary(rows: list[dict[str, Any]]) -> None:
+    """Render rows into the Markdown table CI artefacts.
+
+    Called both inside the test body (so a partial run still produces a
+    report even if pytest skips at the end) and from the fixture teardown
+    (for runs that don't reach the call site). Idempotent overwrite."""
     if not rows:
+        # Empty placeholder so the artifact upload step doesn't warn.
+        SUMMARY_PATH.write_text(
+            "| case | detected | verified | conf | note |\n"
+            "| --- | --- | --- | --- | --- |\n"
+            "| (no cases ran) | - | - | - | model fixture skipped |\n"
+        )
         return
     header = "| case | detected | verified | conf | note |\n| --- | --- | --- | --- | --- |\n"
     body = "\n".join(
@@ -81,7 +90,15 @@ def results_log() -> Iterator[list[dict[str, Any]]]:
         f"{(r.get('error') or '')[:80]} |"
         for r in rows
     )
-    # Write the summary so CI can artefact it.
-    out = EVAL_ROOT / ".last-run.md"
-    out.write_text(header + body + "\n")
-    print(f"\n--- eval summary (written to {out}) ---\n{header}{body}")
+    SUMMARY_PATH.write_text(header + body + "\n")
+    print(f"\n--- eval summary ({SUMMARY_PATH}) ---\n{header}{body}")
+
+
+@pytest.fixture(scope="session")
+def results_log() -> Iterator[list[dict[str, Any]]]:
+    """Accumulator for per-case results; emitted as a Markdown table when
+    the session ends. The test body also writes via `write_summary` after
+    each case so a session-level skip still leaves an artefact behind."""
+    rows: list[dict[str, Any]] = []
+    yield rows
+    write_summary(rows)
