@@ -44,6 +44,18 @@ async def _maybe_ingest_corpus() -> None:
         log.exception("corpus_ingest_failed")
 
 
+def _warmup_embeddings() -> None:
+    """Embed a throwaway string so fastembed's ONNX model loads before the
+    first audit pays the cold-start tax (~12s on bge-small)."""
+    try:
+        from curb_worker.embeddings import embed_one  # noqa: PLC0415
+
+        embed_one("warmup")
+        log.info("embeddings_warm")
+    except Exception:
+        log.warning("embeddings_warmup_failed")
+
+
 async def _consume(
     *,
     pool: Any,
@@ -105,6 +117,9 @@ async def main() -> None:
     # Ingest the WCAG corpus if the table is empty. Idempotent; safe to run
     # on every restart. Costs a model download + ~50 embeddings on first boot.
     await _maybe_ingest_corpus()
+    # Warm the embedding model so the first real audit isn't 12s slower
+    # than every subsequent one.
+    _warmup_embeddings()
 
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):

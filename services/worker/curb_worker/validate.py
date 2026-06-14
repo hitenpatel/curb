@@ -80,10 +80,34 @@ async def apply_patch_and_check(
     flat_selector = target_selector.rsplit(" >>> ", maxsplit=1)[-1]
     scope = await _parent_selector(page, flat_selector)
 
+    # Root-level elements (<html>) can't have their outerHTML replaced
+    # because their parent is the Document node. For those, mutate attributes
+    # in place instead — extract attrs from the proposed markup and apply
+    # them. axe-level attribute fixes (html-has-lang, viewport-meta, …) all
+    # work this way; element-replacement only matters for body-descendant fixes.
     applied: bool = await page.evaluate(
         """({selector, markup}) => {
             const el = document.querySelector(selector);
             if (!el) return false;
+            if (el === document.documentElement) {
+                // Root: parse the proposed outerHTML, copy its attributes onto
+                // the live element.
+                const tmp = new DOMParser().parseFromString(markup, 'text/html');
+                const proposed = tmp.documentElement;
+                if (!proposed) return false;
+                // Clear existing attributes that aren't in the proposed markup,
+                // then set every proposed attribute.
+                const wantedNames = new Set(
+                    Array.from(proposed.attributes).map(a => a.name)
+                );
+                for (const a of Array.from(el.attributes)) {
+                    if (!wantedNames.has(a.name)) el.removeAttribute(a.name);
+                }
+                for (const a of Array.from(proposed.attributes)) {
+                    el.setAttribute(a.name, a.value);
+                }
+                return true;
+            }
             el.outerHTML = markup;
             return true;
         }""",
