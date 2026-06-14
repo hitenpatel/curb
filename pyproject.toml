@@ -62,7 +62,9 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 # `evals` deliberately excluded — that suite is driven via `just eval` and the
 # dedicated CI eval-gate step so a normal `pytest` run doesn't burn LLM quota.
-testpaths = ["services", "packages"]
+# `apps/web/tests` carries the self-audit (axe against our own home page);
+# marked `slow` so pre-push skips, CI runs.
+testpaths = ["services", "packages", "apps/web/tests"]
 markers = [
     "slow: tests that take more than a few seconds (excluded from pre-push smoke)",
     "eval: golden-dataset eval cases (runs in just eval + CI eval-gate step)",
