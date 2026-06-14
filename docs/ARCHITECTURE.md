@@ -110,21 +110,78 @@ network so they can be routed at `a11y.hiten.dev` with the project's ACME resolv
 
 The agent does not emit a fix and hope. It is given the violation, the offending markup, and the
 retrieved guidance, and it has a **`validate` tool** it must use: the tool applies the candidate
-patch to the DOM node in the Playwright page and re-runs axe-core scoped to that node, returning
-whether the target violation is resolved and whether any new violation appeared.
+patch to the DOM in the Playwright page and re-runs axe-core scoped to the **parent region** (the
+target element's outerHTML is being replaced, so the original selector won't survive). It returns
+whether the target violation is resolved and whether any new violation appeared against a baseline
+captured before the patch.
 
 The agent loops _propose → apply → re-check → revise_, bounded, and only marks a remediation
-`verified` once axe confirms it. That deterministic feedback loop is what makes the output
-trustworthy.
+`verified` once axe confirms it.
 
-The verified-only contract lives in `packages/shared/curb_shared/models.py` (`Remediation`).
+### The verified-only contract
+
+Three layers of defence:
+
+1. **System prompt.** The agent is instructed never to return `verified=true` until the validate
+   tool has returned `resolved=true` with an empty `new_violations` list.
+2. **Tool typing.** The agent's output is a `Remediation` model whose `verified: bool` is the
+   only mutable surface for the claim. Output validation rejects malformed responses.
+3. **Worker override.** After the run, `propose_and_verify` (`curb_worker.agent`) overrides
+   `verified` with what the **last `validate` call actually returned**. If `validate` was never
+   called, `verified` is forced to false. A hallucinated `verified=true` is silently corrected.
+
+The two `FunctionModel`-driven tests in `services/worker/tests/test_agent.py` prove this is
+load-bearing: a liar agent that emits `verified=true` without calling validate gets its claim
+flipped to false; an honest agent that says `verified=false` after a successful validate gets
+promoted to true.
+
+Root-level violations (`<html lang>`, etc.) are a special case &mdash; you can't replace
+`document.documentElement`'s outerHTML because its parent is the Document node. The validate tool
+falls back to copying attributes from the proposed markup onto the live root element.
 
 ## Model gateway
 
-A thin resolver builds the Pydantic AI model from config (default: a free tier such as Gemini via
-Google AI Studio) or from a per-request provider + key in BYOK mode. BYOK keys are used for that
-job only and never persisted. The gateway is the single place the model is chosen, so cost and
-provider are config, not architecture.
+A thin resolver builds the Pydantic AI model from config (default: a free tier such as Gemini
+2.5-flash via Google AI Studio) or from a per-request provider + key in BYOK mode. BYOK keys live
+only in the worker process for the duration of one audit; they're carried on the Redis job payload,
+popped, used, then forgotten. Never persisted, never logged.
+
+The gateway is the **only** place the model is chosen. Cost and provider are config, not
+architecture. Today the gateway supports `google-gla`, `groq`, and `openai`; adding a provider is a
+new `if`-arm in `build_model()`.
+
+## Eval harness
+
+- `evals/runner.py` is the core scorer: for one `GoldenCase` (fixture HTML + expected
+  `axe_rule_id`), load → detect (assert expected rule fires) → retrieve guidance → run agent →
+  return `EvalResult`. Primary metric is `verified`, propagated from the same worker flag the live
+  audit writes after `validate` confirms.
+- `evals/golden/` holds 6 cases covering the rule ids axe-core hits most in the wild &mdash;
+  image-alt (1.1.1), button-name (4.1.2), link-name (2.4.4), html-has-lang (3.1.1), label (1.3.1),
+  frame-title (4.1.2). The label fixture went through two iterations because axe accepts
+  `placeholder` as a label-equivalent fallback; the case has to be a bare input.
+- `evals/compare.py` is the model-comparison harness &mdash; runs the suite per `provider:model`
+  string and emits a Markdown table.
+- Inconclusive runs (rate-limit, transient API error) are excluded from the pass-rate denominator.
+  A free-tier flake shouldn't block deploy; a conclusive bad run should.
+
+## Frontend
+
+SvelteKit 2 + Svelte 5 runes, TypeScript strict, Node adapter on port 3000. Routes:
+
+- `/` &mdash; URL input form, optional BYOK `<details>` panel (provider + key, sent on POST,
+  never persisted), sample-audit cards.
+- `/audit/[id]` &mdash; server-side load fetches the `AuditDetail`; on mount the client opens an
+  `EventSource` against `/api/audits/:id/events` and merges status / violation / remediation /
+  complete events into the page state.
+
+Same-origin: Traefik routes `/api/*` to FastAPI and the rest to the SvelteKit Node adapter, so the
+client uses relative paths.
+
+A11y: skip link, semantic landmarks, focus-visible outlines, `aria-live="polite"` announcer for
+SSE updates, `prefers-color-scheme` + `prefers-reduced-motion` honoured. A CI test
+(`apps/web/tests/test_app_a11y.py`) boots the built Node adapter, runs axe-core against the home
+page, and fails the deploy on any WCAG A/AA violation. Curb meets the bar it audits for.
 
 ## Eval harness
 
@@ -140,16 +197,27 @@ provider are config, not architecture.
 
 ## Data model
 
-```sql
--- relational
-audits(id, url, status, created_at, model_used, summary jsonb)
-violations(id, audit_id, rule_id, wcag_criterion, severity, selector, markup, created_at)
-remediations(id, violation_id, explanation, patch jsonb, verified bool, confidence, model_used)
-eval_results(id, audit_id, metric, score, detail jsonb, created_at)
+The canonical schema is `services/api/curb_api/db/schema.sql` (idempotent &mdash; applied at
+startup; we'll graduate to Alembic when the schema actually grows). Shape:
 
--- vector corpus (384 = MiniLM dim)
-wcag_chunks(id, source, criterion, title, body, embedding vector(384))
+```sql
+audits(id, url, status, created_at, updated_at, error, violation_count, model_used, summary jsonb)
+violations(id, audit_id, rule_id, wcag_criterion, description, help, help_url,
+           severity, selector, markup, failure_summary, created_at)
+remediations(id, violation_id, audit_id, wcag_criterion, severity, explanation,
+             patch jsonb, confidence, verified bool, new_violations text[],
+             model_used, created_at)
+wcag_chunks(id, source, criterion, title, body, embedding vector(384), created_at)
 ```
 
-`wcag_chunks` carries an HNSW index on `embedding` plus a btree on `criterion` for hybrid
-retrieval (vector similarity filtered or boosted by the criterion id).
+`wcag_chunks` carries an HNSW index on `embedding` (cosine ops) plus a btree on `criterion` for the
+hybrid retrieval: vector neighbours unioned with all chunks for the matching criterion id, scored
+with a small additive criterion-match boost, deduped, top-k.
+
+## Retrieval pattern
+
+The first cut was vector-ANN + a re-rank boost. That missed chunks whose vector match was weak but
+whose criterion was known-correct (axe gave us the SC id deterministically &mdash; that's signal).
+The fix is to **union** the vector-ANN candidates with all chunks for the matching criterion id,
+then score-and-merge. The boost-only flavour fails on the deliberately-vague test query in
+`services/worker/tests/test_retrieval.py::test_criterion_boost_is_applied`; explicit union passes.
