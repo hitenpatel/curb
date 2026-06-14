@@ -15,7 +15,10 @@
 	{@render children()}
 </main>
 <footer>
-	<small>Curb &mdash; Phase 0 scaffold. Source on GitHub.</small>
+	<small>
+		Curb &mdash; an AI accessibility auditor with a verified-by-axe self-check loop.
+		<a href="https://github.com/hitenpatel/curb" rel="noreferrer">Source on GitHub</a>.
+	</small>
 </footer>
 
 <style>
