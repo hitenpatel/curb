@@ -151,12 +151,14 @@
 	.report-header h1 {
 		font-size: 1.5rem;
 		margin: var(--space-2) 0 var(--space-2);
-		word-break: break-all;
+		overflow-wrap: anywhere;
+		min-width: 0;
 	}
 
 	.report-header h1 code {
 		font-family: var(--font-mono);
 		font-size: 1.125rem;
+		overflow-wrap: anywhere;
 	}
 
 	.back a {

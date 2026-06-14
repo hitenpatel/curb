@@ -40,6 +40,13 @@
 	box-sizing: border-box;
 }
 
+/* CSS grid + flex items default to min-width: auto = content width, so a
+   single <pre> with long markup can push the whole layout past the viewport.
+   Reset to 0 so children can shrink and their own overflow-x kicks in. */
+:where(main, section, article, header, footer, ul, ol, dl, div) > * {
+	min-width: 0;
+}
+
 html,
 body {
 	margin: 0;

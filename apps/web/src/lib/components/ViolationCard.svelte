@@ -95,6 +95,8 @@
 		background: var(--color-surface);
 		display: grid;
 		gap: var(--space-3);
+		min-width: 0;
+		overflow: hidden;
 	}
 	.card > header {
 		display: flex;
