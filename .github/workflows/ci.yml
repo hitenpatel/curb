@@ -65,9 +65,6 @@ jobs:
           PGPASSWORD=curb psql -h localhost -U curb -d curb -f services/api/curb_api/db/schema.sql
           uv run python -m corpus.ingest
 
-      - name: Tests (pytest)
-        run: uv run pytest -q
-
       - name: Frontend install
         run: pnpm --dir apps/web install --frozen-lockfile
 
@@ -75,6 +72,11 @@ jobs:
         run: |
           pnpm --dir apps/web run check
           pnpm --dir apps/web run build
+
+      # Pytest runs *after* the web build so the self-audit test
+      # (apps/web/tests/test_app_a11y.py) has apps/web/build to serve.
+      - name: Tests (pytest)
+        run: uv run pytest -q
 
       # Primary metric: re-run-axe pass rate over the golden dataset.
       # Skipped cleanly when MODEL_API_KEY isn't set (free-tier keys can
