@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { judgementNote } from '../judgement';
 	import type { Remediation, Violation } from '../types';
 	import SeverityBadge from './SeverityBadge.svelte';
 
@@ -6,6 +7,8 @@
 		violation,
 		remediation = null
 	}: { violation: Violation; remediation?: Remediation | null } = $props();
+
+	const note = $derived(judgementNote(violation.rule_id));
 </script>
 
 <article class="card" aria-labelledby={`v-${violation.id}-title`}>
@@ -33,7 +36,10 @@
 		<div class="remediation" data-verified={remediation.verified}>
 			<header>
 				{#if remediation.verified}
-					<span class="badge verified" aria-label="Verified by axe">
+					<span
+						class="badge verified"
+						title="An axe re-scan of the patched DOM no longer reports this violation. Mechanical check only — not a substitute for human review."
+					>
 						<svg
 							width="14"
 							height="14"
@@ -50,10 +56,15 @@
 								stroke-linejoin="round"
 							/>
 						</svg>
-						Verified by axe
+						Verified by axe re-scan
 					</span>
 				{:else}
-					<span class="badge unverified" aria-label="Unverified">Proposed (unverified)</span>
+					<span
+						class="badge unverified"
+						title="The axe re-scan did not confirm this fix — treat it as a suggestion."
+					>
+						Proposed (unverified)
+					</span>
 				{/if}
 				<span class="confidence" title="Agent self-reported confidence">
 					confidence {remediation.confidence.toFixed(2)}
@@ -70,6 +81,12 @@
 					<pre><code>{remediation.patch.fixed}</code></pre>
 				</div>
 			</div>
+			{#if note}
+				<p class="judgement">
+					<strong>Needs a human:</strong>
+					{note}
+				</p>
+			{/if}
 			{#if remediation.new_violations.length > 0}
 				<p class="regression">
 					Rejected — this fix would introduce {remediation.new_violations.length}
@@ -236,6 +253,16 @@
 		margin: 0;
 		font-size: 0.875rem;
 		color: #b91c1c;
+	}
+	.judgement {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		border-top: 1px dashed var(--color-border);
+		padding-top: var(--space-2);
+	}
+	.judgement strong {
+		color: var(--color-text);
 	}
 	.help {
 		font-size: 0.875rem;

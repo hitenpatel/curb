@@ -78,9 +78,10 @@ async def browser_for_app() -> Browser:  # type: ignore[misc]
             await browser.close()
 
 
-async def test_home_page_passes_axe(web_server: str, browser_for_app: Browser) -> None:
+@pytest.mark.parametrize("path", ["/", "/methodology"])
+async def test_page_passes_axe(web_server: str, browser_for_app: Browser, path: str) -> None:
     page = await browser_for_app.new_page()
-    await page.goto(web_server, wait_until="networkidle")
+    await page.goto(f"{web_server}{path}", wait_until="networkidle")
     violations = await run_axe_on_page(uuid4(), page)
     await page.close()
     # Surface any violations in the assertion message so a regression is
@@ -88,4 +89,4 @@ async def test_home_page_passes_axe(web_server: str, browser_for_app: Browser) -
     lines = "\n".join(
         f"  - {v.rule_id} ({v.wcag_criterion}, {v.severity}): {v.selector}" for v in violations
     )
-    assert violations == [], f"Curb's home page failed axe ({len(violations)} violations):\n{lines}"
+    assert violations == [], f"Curb page {path} failed axe ({len(violations)} violations):\n{lines}"

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { startAudit } from '$lib/api';
+	import { fetchSamples, startAudit } from '$lib/api';
+	import type { Audit } from '$lib/types';
 
 	const SAMPLE_AUDITS: { url: string; label: string; note: string }[] = [
 		{
@@ -21,6 +22,16 @@
 	let byokKey = $state('');
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
+	let precomputed = $state<Map<string, Audit>>(new Map());
+
+	// Precomputed runs let the demo buttons link straight to results instead
+	// of burning a live Chromium+LLM run per click. Live-run fallback stays
+	// for any sample the DB doesn't have yet.
+	$effect(() => {
+		fetchSamples().then((samples) => {
+			precomputed = new Map(samples.map((s) => [s.url, s]));
+		});
+	});
 
 	async function audit(event: SubmitEvent) {
 		event.preventDefault();
@@ -142,22 +153,37 @@
 
 <section class="samples" aria-labelledby="samples-heading">
 	<h2 id="samples-heading">Sample audits</h2>
-	<p class="hint">Skip the URL input &mdash; these demo a real run end-to-end.</p>
+	<p class="hint">
+		Skip the URL input &mdash; these are real runs. Precomputed ones open instantly; the rest
+		trigger a live run.
+	</p>
 	<ul>
 		{#each SAMPLE_AUDITS as sample (sample.url)}
+			{@const ready = precomputed.get(sample.url)}
 			<li>
-				<button
-					type="button"
-					class="sample"
-					onclick={async () => {
-						url = sample.url;
-						await audit(new SubmitEvent('submit'));
-					}}
-				>
-					<span class="sample-label">{sample.label}</span>
-					<span class="sample-url">{sample.url}</span>
-					<span class="sample-note">{sample.note}</span>
-				</button>
+				{#if ready}
+					<a class="sample" href={`/audit/${ready.id}`}>
+						<span class="sample-label">
+							{sample.label}
+							<span class="sample-ready">precomputed</span>
+						</span>
+						<span class="sample-url">{sample.url}</span>
+						<span class="sample-note">{sample.note}</span>
+					</a>
+				{:else}
+					<button
+						type="button"
+						class="sample"
+						onclick={async () => {
+							url = sample.url;
+							await audit(new SubmitEvent('submit'));
+						}}
+					>
+						<span class="sample-label">{sample.label}</span>
+						<span class="sample-url">{sample.url}</span>
+						<span class="sample-note">{sample.note}</span>
+					</button>
+				{/if}
 			</li>
 		{/each}
 	</ul>
@@ -287,6 +313,24 @@
 
 	.sample:hover {
 		border-color: var(--color-accent);
+	}
+
+	a.sample {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.sample-ready {
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-accent);
+		border: 1px solid currentColor;
+		border-radius: 0.25rem;
+		padding: 0.0625rem 0.375rem;
+		margin-left: 0.5rem;
+		vertical-align: middle;
 	}
 
 	.sample-label {

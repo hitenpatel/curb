@@ -14,12 +14,19 @@ from uuid import UUID
 
 from curb_shared import Audit, AuditRequest, Remediation, Violation
 from curb_shared.bus import JOB_QUEUE, Job, events_channel, serialize_job
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
+from curb_api import ratelimit
 from curb_api.db import get_pool
-from curb_api.db.queries import create_audit, get_audit, list_remediations, list_violations
+from curb_api.db.queries import (
+    create_audit,
+    get_audit,
+    list_remediations,
+    list_sample_audits,
+    list_violations,
+)
 from curb_api.queue import get_redis
 
 router = APIRouter(prefix="/api/audits")
@@ -68,7 +75,18 @@ class AuditDetail(BaseModel):
 
 
 @router.post("", response_model=Audit, status_code=201)
-async def enqueue_audit(req: AuditRequest) -> Audit:
+async def enqueue_audit(req: AuditRequest, request: Request) -> Audit:
+    retry_after = ratelimit.check(ratelimit.client_ip(request), byok=bool(req.model_api_key))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Audit rate limit reached — audits run headless Chromium and an "
+                "LLM, so anonymous runs are capped. Bring your own model key for "
+                "a higher limit, or try one of the precomputed sample audits."
+            ),
+            headers={"Retry-After": str(int(retry_after) + 1)},
+        )
     pool = get_pool()
     redis = get_redis()
     audit = await create_audit(pool, str(req.url))
@@ -81,6 +99,14 @@ async def enqueue_audit(req: AuditRequest) -> Audit:
     )
     await redis.rpush(JOB_QUEUE, serialize_job(job))
     return audit
+
+
+# Declared before /{audit_id}: that path param is UUID-typed and "samples"
+# would otherwise 422 against it.
+@router.get("/samples", response_model=list[Audit])
+async def read_samples() -> list[Audit]:
+    """Precomputed showcase audits — real runs, flagged is_sample in the DB."""
+    return await list_sample_audits(get_pool())
 
 
 @router.get("/{audit_id}", response_model=AuditDetail)

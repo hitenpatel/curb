@@ -30,10 +30,21 @@ and measurable:
 6. **Curb eats its own dog food.** A CI test runs axe-core against Curb's own home page and fails
    the deploy on any WCAG A/AA violation.
 
+## What "verified" means (and doesn't)
+
+**Verified** means exactly one thing: an axe re-scan of the patched DOM no longer reports the
+violation and no new violations appeared. It is a mechanical regression check &mdash; not WCAG
+conformance, and not a substitute for human review. Automated tools detect roughly a third to a
+half of WCAG failures; axe can confirm an `alt` attribute exists but not that its text is
+meaningful. The UI labels those cases per-fix ("needs a human"), and the live site documents the
+full contract at [a11y.hiten.dev/methodology](https://a11y.hiten.dev/methodology).
+
 ## Live demo
 
-`https://a11y.hiten.dev` &mdash; try one of the sample audits, or paste a URL of your own. Add your
-own model key in the BYOK panel to run the agent without using the server's free-tier quota.
+`https://a11y.hiten.dev` &mdash; try one of the sample audits (precomputed real runs &mdash; they
+open instantly), or paste a URL of your own. Anonymous live audits are rate-limited per IP; add
+your own model key in the BYOK panel for a higher limit without using the server's free-tier
+quota.
 
 ![home page](docs/images/home.png)
 ![audit page](docs/images/audit.png)

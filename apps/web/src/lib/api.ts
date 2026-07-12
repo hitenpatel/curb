@@ -2,7 +2,7 @@
 // FastAPI), so relative paths work in prod. In SSR we go through fetch which
 // SvelteKit hands us; on the client, the browser's native fetch is used.
 
-import type { AuditDetail } from './types';
+import type { Audit, AuditDetail } from './types';
 
 export interface StartAuditOptions {
 	url: string;
@@ -25,8 +25,22 @@ export async function startAudit(
 	});
 	if (!response.ok) {
 		const body = await response.text().catch(() => '');
-		throw new Error(`POST /api/audits failed (${response.status}): ${body}`);
+		let detail = body;
+		try {
+			detail = JSON.parse(body).detail ?? body;
+		} catch {
+			// not JSON — keep the raw body
+		}
+		throw new Error(
+			response.status === 429 ? String(detail) : `POST /api/audits failed (${response.status}): ${detail}`
+		);
 	}
+	return response.json();
+}
+
+export async function fetchSamples(fetcher: typeof fetch = fetch): Promise<Audit[]> {
+	const response = await fetcher('/api/audits/samples');
+	if (!response.ok) return [];
 	return response.json();
 }
 

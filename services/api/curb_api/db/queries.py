@@ -33,6 +33,17 @@ async def get_audit(pool: Pool, audit_id: UUID) -> Audit | None:
     return Audit(**dict(row)) if row else None
 
 
+async def list_sample_audits(pool: Pool) -> list[Audit]:
+    rows = await pool.fetch(
+        """
+        SELECT id, url, status, created_at, updated_at, error, violation_count
+        FROM audits WHERE is_sample AND status = 'complete'
+        ORDER BY created_at DESC
+        """
+    )
+    return [Audit(**dict(r)) for r in rows]
+
+
 async def list_violations(pool: Pool, audit_id: UUID) -> list[Violation]:
     rows = await pool.fetch(
         """

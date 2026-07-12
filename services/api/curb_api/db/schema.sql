@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS audits (
 
 CREATE INDEX IF NOT EXISTS audits_created_at_idx ON audits (created_at DESC);
 
+-- Precomputed showcase audits, served by GET /api/audits/samples so the
+-- landing-page demos don't burn a live run (and quota) per click.
+ALTER TABLE audits ADD COLUMN IF NOT EXISTS is_sample boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS audits_is_sample_idx ON audits (is_sample) WHERE is_sample;
+
 CREATE TABLE IF NOT EXISTS violations (
     id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     audit_id        uuid NOT NULL REFERENCES audits(id) ON DELETE CASCADE,

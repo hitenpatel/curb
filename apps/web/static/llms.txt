@@ -19,7 +19,8 @@ Python 3.12, FastAPI, Pydantic AI, Playwright + axe-core, Postgres 17 + pgvector
 
 ## Links
 
-- Live demo: https://a11y.hiten.dev (sample audits, or paste a URL; BYOK panel for your own model key)
+- Live demo: https://a11y.hiten.dev (precomputed sample audits, or paste a URL; anonymous runs are rate-limited per IP, BYOK panel raises the limit)
+- Methodology — full "what verified means/doesn't mean" contract: https://a11y.hiten.dev/methodology
 - Source: https://github.com/hitenpatel/curb
 - Author: Hiten Patel — senior frontend engineer and accessibility specialist, https://hiten.dev
 - Full CV: https://hiten.dev/llms.txt and https://ask.hiten.dev

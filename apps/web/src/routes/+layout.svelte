@@ -9,6 +9,7 @@
 	<nav aria-label="Primary">
 		<a class="brand" href="/">Curb</a>
 		<span class="tagline">verified WCAG fixes</span>
+		<a class="nav-link" href="/methodology">Methodology</a>
 	</nav>
 </header>
 <main id="main" tabindex="-1">
@@ -16,7 +17,8 @@
 </main>
 <footer>
 	<small>
-		Curb &mdash; an AI accessibility auditor with a verified-by-axe self-check loop.
+		Curb &mdash; an AI accessibility auditor with an axe re-scan self-check loop. Automated checks
+		catch a fraction of WCAG; <a href="/methodology">read what &ldquo;verified&rdquo; means here</a>.
 		<a href="https://github.com/hitenpatel/curb" rel="noreferrer">Source on GitHub</a>.
 	</small>
 </footer>
@@ -62,6 +64,12 @@
 	.tagline {
 		color: var(--color-text-muted);
 		font-size: 0.9rem;
+	}
+
+	.nav-link {
+		margin-left: auto;
+		color: var(--color-text);
+		font-size: 0.9375rem;
 	}
 
 	main {
