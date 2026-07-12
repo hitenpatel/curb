@@ -47,6 +47,33 @@
 		name="description"
 		content="An AI accessibility auditor that proposes verified code-level fixes for WCAG violations, scored by an eval harness."
 	/>
+	<link rel="canonical" href="https://a11y.hiten.dev/" />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://a11y.hiten.dev/" />
+	<meta property="og:site_name" content="Curb" />
+	<meta property="og:title" content="Curb — verified WCAG fixes" />
+	<meta
+		property="og:description"
+		content="An AI accessibility auditor: deterministic detection via axe-core, grounded remediation, every fix re-verified by axe — not by the model."
+	/>
+	<meta name="twitter:card" content="summary" />
+	{@html `<script type="application/ld+json">${JSON.stringify({
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: 'Curb',
+		url: 'https://a11y.hiten.dev',
+		description:
+			'An AI accessibility auditor that detects WCAG violations deterministically with axe-core and proposes code-level fixes verified by re-running axe against the patched DOM.',
+		applicationCategory: 'DeveloperApplication',
+		operatingSystem: 'Web',
+		offers: { '@type': 'Offer', price: '0', priceCurrency: 'GBP' },
+		author: {
+			'@type': 'Person',
+			name: 'Hiten Patel',
+			url: 'https://hiten.dev',
+			jobTitle: 'Senior Frontend Engineer'
+		}
+	})}</script>`}
 </svelte:head>
 
 <section class="hero">

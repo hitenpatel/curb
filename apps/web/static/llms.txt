@@ -1,0 +1,29 @@
+# Curb
+
+> An AI accessibility auditor that detects WCAG violations deterministically (axe-core via Playwright) and proposes code-level fixes that are verified by re-running axe against the patched DOM — the model never grades its own work. Built by Hiten Patel (https://hiten.dev).
+
+Important framing: "verified" means an axe-core re-scan confirms the specific violation is resolved without introducing new ones. It does not replace expert human review — many WCAG criteria (alt-text adequacy, context, intent) require human judgement. Curb is a tool for developers and accessibility consultants to speed up audit-and-remediation cycles.
+
+## How it works
+
+1. Detection is deterministic: axe-core runs against the rendered DOM via Playwright; the model never decides whether a violation exists.
+2. Remediation is grounded: a WCAG 2.2 + ARIA APG corpus embedded locally (pgvector HNSW + criterion-id boost) is retrieved per violation.
+3. Every fix is verified by axe, not by the model: the Pydantic AI agent's single tool (`validate`) applies the patch to the live page and re-runs axe scoped to the parent region. The worker overrides the agent's `verified` claim with the actual validate result.
+4. An eval harness gates deploys: golden WCAG fixtures, primary metric is re-run-axe pass rate; regressions block the deploy.
+5. Free by design: local embeddings, free-tier model gateway (Gemini / Groq / GitHub Models / Ollama), per-request BYOK keys that never touch disk.
+6. Curb audits its own home page in CI and fails the deploy on any WCAG A/AA violation.
+
+## Stack
+
+Python 3.12, FastAPI, Pydantic AI, Playwright + axe-core, Postgres 17 + pgvector, Redis (jobs + SSE), SvelteKit 2 / Svelte 5 frontend.
+
+## Links
+
+- Live demo: https://a11y.hiten.dev (sample audits, or paste a URL; BYOK panel for your own model key)
+- Source: https://github.com/hitenpatel/curb
+- Author: Hiten Patel — senior frontend engineer and accessibility specialist, https://hiten.dev
+- Full CV: https://hiten.dev/llms.txt and https://ask.hiten.dev
+
+## Status
+
+In development — public prototype. Detection, grounded remediation, verification loop, and eval harness are live.
